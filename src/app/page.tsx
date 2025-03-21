@@ -1,20 +1,27 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import io from 'socket.io-client'
 import axios from 'axios'
+
+const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
 
 const socket = io('http://localhost:5050', {
     withCredentials: true,
     transports: ['websocket'],
-    auth: { token: localStorage.getItem('token') },
+    auth: { token },
 })
 
 export default function Chat() {
     const [message, setMessage] = useState('')
     const [messages, setMessages] = useState<
-        { from: string; content: string }[]
+        {
+            senderId: { username: string }
+            content: string
+        }[]
     >([])
+    // console.log(messages)
+
     const [searchUser, setSearchUser] = useState('')
     const [userList, setUserList] = useState<{ username: string }[]>([])
     const [selectedUser, setSelectedUser] = useState<string | null>(null)
@@ -22,6 +29,28 @@ export default function Chat() {
         userId: string
         username?: string | null
     } | null>(null)
+
+    const chatContainerRef = useRef<HTMLDivElement>(null)
+    const [isAtBottom, setIsAtBottom] = useState(true)
+    const [hasNewMessage, setHasNewMessage] = useState(false)
+
+    const handleScroll = () => {
+        if (!chatContainerRef.current) return
+        const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current
+        const isBottom = scrollTop + clientHeight >= scrollHeight - 10
+
+        setIsAtBottom(isBottom)
+        if (isBottom) setHasNewMessage(false) // Nếu đang ở cuối thì không cần thông báo tin nhắn mới
+    }
+
+    useEffect(() => {
+        if (!isAtBottom) setHasNewMessage(true)
+    }, [messages])
+
+    const scrollToBottom = () => {
+        chatContainerRef.current?.scrollTo({ top: chatContainerRef.current.scrollHeight, behavior: 'smooth' })
+    }
+
 
     useEffect(() => {
         axios
@@ -35,6 +64,7 @@ export default function Chat() {
     }, [])
 
     useEffect(() => {
+        if (!socket) return
         socket.on('connect', () => {
             console.log('Socket connected successfully')
         })
@@ -44,14 +74,14 @@ export default function Chat() {
         })
 
         socket.on('message', (msg) => {
-            setMessages((prev) => [...prev, { from: 'System', content: msg }])
+            setMessages((prev) => [...prev, { senderId: { username: 'System' }, content: msg }])
         })
 
         socket.on('private_message', (msg) => {
             console.log(`Nhận tin nhắn từ ${msg.from}: ${msg.content}`)
             setMessages((prev) => [
                 ...prev,
-                { from: msg.from, content: msg.content },
+                { senderId: { username: msg.from }, content: msg.content },
             ])
         })
 
@@ -67,7 +97,7 @@ export default function Chat() {
     const sendMessage = () => {
         if (!message.trim()) return
         socket.emit('message', message)
-        setMessages((prev) => [...prev, { from: 'You', content: message }])
+        setMessages((prev) => [...prev, { senderId: { username: 'You' }, content: message }])
         setMessage('')
     }
 
@@ -75,7 +105,7 @@ export default function Chat() {
         if (!selectedUser || !message.trim()) return
         console.log(`Gửi tin nhắn đến ${selectedUser}: ${message}`)
         socket.emit('private_message', { to: selectedUser, message })
-        setMessages((prev) => [...prev, { from: 'You', content: message }])
+        setMessages((prev) => [...prev, { senderId: { username: 'You' }, content: message }])
         setMessage('')
 
         await axios.post(
@@ -98,8 +128,11 @@ export default function Chat() {
                     withCredentials: true,
                 }
             )
-            .then((res) => setMessages(res.data.messages))
-    }, [selectedUser, user?.username])
+            .then((res) => {
+                // console.log(res.data.messages)
+                setMessages(res.data.messages)
+            })
+    }, [selectedUser, user?.username, messages])
 
     const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const query = e.target.value.trim()
@@ -132,7 +165,7 @@ export default function Chat() {
                 type="text"
                 placeholder="Tìm kiếm user..."
                 value={searchUser}
-                onChange={(e) => setSearchUser(e.target.value)}
+                onChange={handleSearch}
             />
             <ul className="mt-2">
                 {userList.map((u, idx) => (
@@ -162,19 +195,44 @@ export default function Chat() {
                 )}
             </div>
 
-            <div className="border p-2 h-64 overflow-y-auto mt-4">
+            {/* Khung chat */}
+            <div ref={chatContainerRef} className="border p-2 h-64 overflow-y-auto mt-4">
                 {messages.map((msg, idx) => (
-                    <div key={idx} className="p-1 border-b">
-                        <strong>{msg.from}: </strong> {msg.content}
+                    <div
+                        key={idx}
+                        className={`p-2 my-1 max-w-[70%] rounded-lg ${msg.senderId.username === user?.username
+                            ? 'bg-blue-500 text-white self-end ml-auto' // Tin nhắn của "You" (bên phải)
+                            : 'bg-gray-200 text-black self-start'      // Tin nhắn của người khác (bên trái)
+                            }`}
+                        style={{ display: 'flex', flexDirection: 'column' }}
+                    >
+                        <strong>
+                            {msg.senderId.username === user?.username ? 'You' : msg.senderId.username}
+                        </strong>
+                        <span>{msg.content}</span>
                     </div>
                 ))}
+                
+                {/* Nút cuộn xuống (chỉ hiển thị khi có tin nhắn mới) */}
+                {hasNewMessage && (
+                    <button onClick={scrollToBottom} className="fixed bottom-5 right-5 bg-blue-500 text-white px-3 py-2 rounded-full shadow-lg">
+                        🔽 Tin nhắn mới
+                    </button>
+                )}
             </div>
+
 
             <input
                 className="border p-2 w-full mt-2"
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Nhập tin nhắn..."
+                onKeyDown={(e) => {
+                    if (e.key == 'Enter' && !e.shiftKey) {
+                        e.preventDefault()
+                        selectedUser ? sendPrivateMessage() : sendMessage()
+                    }
+                }}
             />
             <button
                 className="bg-blue-500 text-white p-2 mt-2 w-full"
