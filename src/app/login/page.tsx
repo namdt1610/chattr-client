@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import ConsoleLog from '@/components/ConsoleLog'
-import { useConsoleLogs } from '@/hooks/chat/useLogs'
+import { useConsoleLogs } from '@/hooks/useLogs'
 
 const LoginPage = () => {
     const logs = useConsoleLogs()

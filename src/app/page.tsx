@@ -6,7 +6,7 @@ import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { useConsoleLogs } from '@/hooks/useLogs'
 import { useLogout } from '@/hooks/useLogout'
-import ConsoleLog from '../components/ConsoleLog'
+import ConsoleLog from '@/components/ConsoleLog'
 
 const token =
     typeof window !== 'undefined' ? localStorage.getItem('token') : null
@@ -150,8 +150,23 @@ const Chat = () => {
                 senderUsername: user?.username,
                 receiverUsername: selectedUser,
                 content: message,
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${localStorage.getItem(
+                        'accessToken'
+                    )}`,
+                },
+                withCredentials: true,
             },
-            { withCredentials: true }
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${localStorage.getItem(
+                        'accessToken'
+                    )}`,
+                },
+                withCredentials: true,
+            }
         )
     }
 

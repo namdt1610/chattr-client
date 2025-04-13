@@ -4,14 +4,16 @@ import { Socket } from 'socket.io-client';
 
 export const useUsers = (socket: Socket | null) => {
       const [searchUser, setSearchUser] = useState('');
-      const [userList, setUserList] = useState<{ username: string }[]>([]);
-      const [selectedUser, setSelectedUser] = useState<string | null>(null);
+      const [userList, setUserList] = useState<{ _id: string, username?: string | null }[]>([]);
+      const [selectedUser, setSelectedUser] = useState<{
+            _id: string;
+            username?: string | null;
+      } | null>(null);
       const [user, setUser] = useState<{
-            userId: string;
+            _id: string;
             username?: string | null;
       } | null>(null);
       const [isLoggedIn, setIsLoggedIn] = useState(false);
-
       // Load current user
       useEffect(() => {
             try {
@@ -23,12 +25,17 @@ export const useUsers = (socket: Socket | null) => {
                               withCredentials: true,
                         })
                         .then((res) => {
+                              if (res.status == 401) {
+                                    window.location.href = '/login';
+                              }
+                              console.log('Current user:', res.data.user);
                               setUser(res.data.user);
                               setIsLoggedIn(true);
                         });
             } catch (error) {
                   setIsLoggedIn(false);
                   console.error('Error fetching user data:', error);
+
             }
       }, []);
 
@@ -58,6 +65,7 @@ export const useUsers = (socket: Socket | null) => {
                               }
                         );
                         setUserList(response.data);
+                        console.log(response.data);
                   } catch (error) {
                         console.error('Error fetching users:', error);
                   }

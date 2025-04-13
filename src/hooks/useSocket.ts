@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import io, { Socket } from 'socket.io-client';
 
-export const useSocket = (user: { userId: string; username?: string | null } | null) => {
+export const useSocket = (user: { _id: string; username?: string | null } | null) => {
       const [socket, setSocket] = useState<Socket | null>(null);
       const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
 
       useEffect(() => {
-            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+            const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
 
             const socketInstance = io('http://localhost:5050', {
                   withCredentials: true,
@@ -26,7 +26,7 @@ export const useSocket = (user: { userId: string; username?: string | null } | n
 
             socketInstance.on('online-users', (userId, username) => {
                   setOnlineUsers((prev) => [...prev, userId]);
-                  console.log('Người dùng online:', userId);
+                  console.log('Online users:', userId);
             });
 
             return () => {
