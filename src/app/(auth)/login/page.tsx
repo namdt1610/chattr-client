@@ -1,84 +1,242 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import ConsoleLog from '@/components/ConsoleLog'
 import { useConsoleLogs } from '@/hooks/useLogs'
+import { useLogin } from '@/hooks/useLogin'
+import Link from 'next/link'
+import { motion } from 'framer-motion'
 
 const LoginPage = () => {
     const logs = useConsoleLogs()
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
-    const [error, setError] = useState('')
-    const router = useRouter()
+    const { login, error, isLoading } = useLogin()
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
+        await login({ username, password })
+    }
 
-        try {
-            const response = await fetch(
-                'http://localhost:5050/api/auth/login',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ username, password }),
-                    credentials: 'include',
-                }
-            )
+    // Animation variants
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                when: 'beforeChildren',
+                staggerChildren: 0.1,
+                duration: 0.3,
+            },
+        },
+    }
 
-            const data = await response.json()
-            if (response.ok) {
-                console.log('Login successful:', data.accessToken)
-                localStorage.setItem('accessToken', data.accessToken)
-                alert('Login successful! Now connecting to WebSocket...')
-                router.push('/beta')
-            } else {
-                const data = await response.json()
-                setError(data.message || 'Login failed')
-            }
-        } catch (error) {
-            setError('An error occurred during login')
-        }
+    const itemVariants = {
+        hidden: { y: 20, opacity: 0 },
+        visible: { y: 0, opacity: 1, transition: { duration: 0.5 } },
     }
 
     return (
-        <div className="login-container w-full h-screen flex flex-col items-center  mx-32">
-            {/* Logs Section */}
-            <div className="w-full flex flex-col items-center justify-center my-12">
-                <ConsoleLog logs={logs} />
+        <motion.div
+            className="overflow-hidden min-h-screen w-full bg-gradient-to-br from-indigo-50 to-blue-100 flex flex-col"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+        >
+            {/* Logs Section - Collapsible and minimized by default */}
+            <motion.div
+                className="w-full bg-white shadow-sm p-2"
+                initial={{ y: -50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2, duration: 0.4 }}
+            >
+                <details className="w-full">
+                    <summary className="text-sm text-gray-500 cursor-pointer hover:text-indigo-600 font-medium">
+                        Console Logs
+                    </summary>
+                    <div className="p-2 max-h-40 overflow-y-auto">
+                        <ConsoleLog logs={logs} />
+                    </div>
+                </details>
+            </motion.div>
+
+            {/* Login Card */}
+            <div className="flex-grow flex items-center justify-center px-4 sm:px-6 lg:px-8">
+                <motion.div
+                    className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                    whileHover={{
+                        boxShadow:
+                            '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                    }}
+                    transition={{ duration: 0.3 }}
+                >
+                    <motion.div variants={itemVariants}>
+                        <h2 className="mt-2 text-center text-3xl font-extrabold text-gray-900">
+                            Welcome back
+                        </h2>
+                        <p className="mt-2 text-center text-sm text-gray-600">
+                            Sign in to continue to ChatApp
+                        </p>
+                    </motion.div>
+
+                    <form className="mt-8 space-y-6" onSubmit={handleLogin}>
+                        <div className="space-y-4 rounded-md">
+                            <motion.div variants={itemVariants}>
+                                <label
+                                    htmlFor="username"
+                                    className="block text-sm font-medium text-gray-700"
+                                >
+                                    Username
+                                </label>
+                                <div className="mt-1">
+                                    <motion.input
+                                        whileFocus={{ scale: 1.01 }}
+                                        transition={{
+                                            type: 'spring',
+                                            stiffness: 400,
+                                        }}
+                                        id="username"
+                                        name="username"
+                                        type="text"
+                                        autoComplete="username"
+                                        required
+                                        value={username}
+                                        onChange={(e) =>
+                                            setUsername(e.target.value)
+                                        }
+                                        disabled={isLoading}
+                                        className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                        placeholder="Username"
+                                    />
+                                </div>
+                            </motion.div>
+
+                            <motion.div variants={itemVariants}>
+                                <label
+                                    htmlFor="password"
+                                    className="block text-sm font-medium text-gray-700"
+                                >
+                                    Password
+                                </label>
+                                <div className="mt-1">
+                                    <motion.input
+                                        whileFocus={{ scale: 1.01 }}
+                                        transition={{
+                                            type: 'spring',
+                                            stiffness: 400,
+                                        }}
+                                        id="password"
+                                        name="password"
+                                        type="password"
+                                        autoComplete="current-password"
+                                        required
+                                        value={password}
+                                        onChange={(e) =>
+                                            setPassword(e.target.value)
+                                        }
+                                        disabled={isLoading}
+                                        className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
+                                        placeholder="Password"
+                                    />
+                                </div>
+                            </motion.div>
+                        </div>
+
+                        {error && (
+                            <motion.div
+                                className="text-red-500 text-sm bg-red-50 border border-red-200 rounded-md p-3"
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                {error}
+                            </motion.div>
+                        )}
+
+                        <motion.div variants={itemVariants}>
+                            <motion.button
+                                type="submit"
+                                disabled={isLoading}
+                                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70 disabled:cursor-not-allowed"
+                                whileHover={{ scale: 1.03 }}
+                                whileTap={{ scale: 0.98 }}
+                                transition={{
+                                    type: 'spring',
+                                    stiffness: 400,
+                                    damping: 10,
+                                }}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <svg
+                                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            fill="none"
+                                            viewBox="0 0 24 24"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            ></circle>
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                            ></path>
+                                        </svg>
+                                        Signing in...
+                                    </>
+                                ) : (
+                                    'Sign in'
+                                )}
+                            </motion.button>
+                        </motion.div>
+
+                        <motion.div
+                            className="text-sm text-center"
+                            variants={itemVariants}
+                        >
+                            <p className="text-gray-600">
+                                Don't have an account?{' '}
+                                <motion.span
+                                    whileHover={{
+                                        color: '#4338ca',
+                                        scale: 1.05,
+                                    }}
+                                    transition={{
+                                        type: 'spring',
+                                        stiffness: 400,
+                                    }}
+                                >
+                                    <Link
+                                        href="/register"
+                                        className="font-medium text-indigo-600 hover:text-indigo-500"
+                                    >
+                                        Register now
+                                    </Link>
+                                </motion.span>
+                            </p>
+                        </motion.div>
+                    </form>
+                </motion.div>
             </div>
 
-            {/* Login Page */}
-            <div className="w-full flex flex-col items-center justify-center">
-                <h2>Login</h2>
-                <form onSubmit={handleLogin}>
-                    <div className="w-full">
-                        <label htmlFor="username">Username</label>
-                        <input
-                            type="text"
-                            id="username"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label htmlFor="password">Password</label>
-                        <input
-                            type="password"
-                            id="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            required
-                        />
-                    </div>
-                    {error && <p className="error">{error}</p>}
-                    <button type="submit">Login</button>
-                </form>
-            </div>
-        </div>
+            <motion.footer
+                className="w-full py-4 text-center text-gray-500 text-sm"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8, duration: 0.5 }}
+            >
+                © {new Date().getFullYear()} ChatApp. All rights reserved.
+            </motion.footer>
+        </motion.div>
     )
 }
 

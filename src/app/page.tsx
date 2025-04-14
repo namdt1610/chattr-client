@@ -1,15 +1,16 @@
 'use client'
 import React, { useEffect, useState } from 'react'
+import { formatTimestamp } from '@/utils/formatDate'
 import { useConsoleLogs } from '@/hooks/useLogs'
 import { useLogout } from '@/hooks/useLogout'
 import { useSocket } from '@/hooks/useSocket'
 import { useChat } from '@/hooks/useChat'
 import { useUsers } from '@/hooks/useUsers'
-import ConsoleLog from '@/components/ConsoleLog'
 import { useChatStatus } from '@/hooks/useChatStatus'
 import { useRecentChats } from '@/hooks/useGetRecentChats'
-import { formatTimestamp } from '@/utils/formatDate'
+import ConsoleLog from '@/components/ConsoleLog'
 import ExpiredSessionModal from '@/components/ExpiredSessionModal'
+import Header from '@/components/chat/Header'
 
 const Chat = () => {
     const logs = useConsoleLogs()
@@ -47,9 +48,7 @@ const Chat = () => {
 
     // Add an effect to update the modal state when login state changes
     useEffect(() => {
-        setShowLoginModal(
-            !isLoggedIn 
-        )
+        setShowLoginModal(!isLoggedIn)
     }, [isLoggedIn])
 
     return (
@@ -62,38 +61,11 @@ const Chat = () => {
             />
 
             {/* Header Section */}
-            <header className="px-6 py-4 border-b border-zinc-100 flex justify-between items-center">
-                <h1 className="text-xl font-normal">Chat</h1>
-                <div
-                    className={`flex items-center text-xs rounded-full px-2 py-0.5 ${
-                        isConnected
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-amber-100 text-amber-800'
-                    }`}
-                >
-                    <div
-                        className={`w-1.5 h-1.5 rounded-full mr-1 ${
-                            isConnected ? 'bg-green-500' : 'bg-amber-500'
-                        }`}
-                    ></div>
-                    {isConnected ? 'Connected' : 'Offline'}
-                </div>
-                {isLoggedIn ? (
-                    <button
-                        onClick={handleLogout}
-                        className="text-sm text-zinc-500 hover:text-zinc-800"
-                    >
-                        Sign out
-                    </button>
-                ) : (
-                    <a
-                        href="/login"
-                        className="text-sm text-blue-500 hover:text-blue-600"
-                    >
-                        Sign in
-                    </a>
-                )}
-            </header>
+            <Header
+                isConnected={isConnected}
+                isLoggedIn={isLoggedIn}
+                onLogout={handleLogout}
+            />
 
             <div className="flex h-[calc(100vh-60px)]">
                 {/* Sidebar */}
