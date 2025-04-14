@@ -3,6 +3,7 @@ import axios from 'axios';
 import { Socket } from 'socket.io-client';
 
 export const useUsers = (socket: Socket | null) => {
+      const [isSessionExpired, setIsSessionExpired] = useState(false)
       const [searchUser, setSearchUser] = useState('');
       const [userList, setUserList] = useState<{ _id: string, username?: string | null }[]>([]);
       const [selectedUser, setSelectedUser] = useState<{
@@ -30,10 +31,12 @@ export const useUsers = (socket: Socket | null) => {
                               }
                               console.log('Current user:', res.data.user);
                               setUser(res.data.user);
+                              setIsSessionExpired(false);
                               setIsLoggedIn(true);
                         });
             } catch (error) {
                   setIsLoggedIn(false);
+                  setIsSessionExpired(true);
                   console.error('Error fetching user data:', error);
 
             }
@@ -82,5 +85,7 @@ export const useUsers = (socket: Socket | null) => {
             user,
             isLoggedIn,
             handleSearch,
+            isSessionExpired,
+            setIsSessionExpired,
       };
 };

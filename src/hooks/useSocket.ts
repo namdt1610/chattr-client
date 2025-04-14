@@ -4,6 +4,7 @@ import io, { Socket } from 'socket.io-client';
 export const useSocket = (user: { _id: string; username?: string | null } | null) => {
       const [socket, setSocket] = useState<Socket | null>(null);
       const [onlineUsers, setOnlineUsers] = useState<string[]>([]);
+      const [isConnected, setIsConnected] = useState(false);
 
       useEffect(() => {
             const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
@@ -21,6 +22,7 @@ export const useSocket = (user: { _id: string; username?: string | null } | null
             });
 
             socketInstance.on('error', (error) => {
+                  setIsConnected(false);
                   console.error('Socket error:', error);
             });
 
@@ -34,5 +36,5 @@ export const useSocket = (user: { _id: string; username?: string | null } | null
             };
       }, []);
 
-      return { socket, onlineUsers };
+      return { socket, onlineUsers, isConnected };
 };

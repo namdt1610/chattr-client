@@ -33,7 +33,7 @@ const LoginPage = () => {
                 console.log('Login successful:', data.accessToken)
                 localStorage.setItem('accessToken', data.accessToken)
                 alert('Login successful! Now connecting to WebSocket...')
-                router.push('/')
+                router.push('/beta')
             } else {
                 const data = await response.json()
                 setError(data.message || 'Login failed')

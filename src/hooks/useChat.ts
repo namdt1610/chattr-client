@@ -193,6 +193,7 @@ export const useChat = (socket: Socket | null, user: User, selectedUser: Selecte
             message,
             setMessage,
             messages,
+            setMessages,
             sendMessage,
             sendPrivateMessage,
             chatContainerRef,
