@@ -60,7 +60,7 @@ const Chat = () => {
 
     return (
         <motion.div 
-            className="flex flex-col h-screen bg-gray-50 w-full"
+            className="flex flex-col bg-gray-50 w-full"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
@@ -139,7 +139,7 @@ const Chat = () => {
                 
                 {/* Chat Area */}
                 <motion.div 
-                    className="flex-1 relative w-full"
+                    className="flex-1 relative h-full"
                     initial="hidden"
                     animate="visible"
                     variants={fadeIn}

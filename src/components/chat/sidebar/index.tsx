@@ -25,7 +25,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   chats
 }) => {
   return (
-    <aside className="w-72 border-r border-zinc-100 flex flex-col">
+    <aside className="border-r border-zinc-100 flex flex-col">
       <UserInfo username={user?.username} />
       <SearchBar value={searchUser} onChange={handleSearch} />
       

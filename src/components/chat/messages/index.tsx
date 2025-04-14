@@ -46,7 +46,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({
   isLoggedIn
 }) => {
   return (
-    <main className="flex-1 flex flex-col overflow-hidden">
+    <main className="flex-1 flex flex-col overflow-hidden h-full">
       <ChatHeader 
         selectedUser={selectedUser} 
         onClose={() => {
