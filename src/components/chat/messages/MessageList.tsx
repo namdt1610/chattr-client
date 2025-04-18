@@ -40,15 +40,52 @@ const MessageList: React.FC<MessageListProps> = ({
                                 ? 'You'
                                 : msg.sender?.username}
                         </div>
-                        <div
-                            className={`py-2 px-4 rounded-lg ${
-                                msg.sender?.username === user?.username
-                                    ? 'bg-blue-500 text-white'
-                                    : 'bg-zinc-100 text-zinc-800'
-                            }`}
-                        >
-                            {msg.content}
-                        </div>
+
+                        {msg.attachments && msg.attachments.length > 0 ? (
+                            <div className="message-attachments gap-2 flex flex-col">
+                                {msg.attachments.map(
+                                    (fileUrl: string, index: number) => {
+                                        const isImage =
+                                            /\.(jpg|jpeg|png|gif|webp)$/i.test(
+                                                fileUrl
+                                            )
+                                        return isImage ? (
+                                            <img
+                                                src={`http://localhost:5050/${fileUrl}`}
+                                                crossOrigin="anonymous"
+                                                alt={`attachment-${index}`}
+                                                key={index}
+                                                className="rounded-xl max-w-full h-auto shadow-md"
+                                            />
+                                        ) : (
+                                            <a
+                                                href={`http://localhost:5050/${fileUrl}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                key={index}
+                                                className="inline-block text-blue-600 hover:underline"
+                                            >
+                                                📎 File {index + 1}
+                                            </a>
+                                        )
+                                    }
+                                )}
+                            </div>
+                        ) : (
+                            <div
+                                className={`py-2 px-4 rounded-lg ${
+                                    msg.sender?.username === user?.username
+                                        ? 'bg-blue-500 text-white'
+                                        : 'bg-zinc-100 text-zinc-800'
+                                }`}
+                            >
+                                {msg.content && (
+                                    <p className="message-text">
+                                        {msg.content}
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
                 ))
             ) : selectedUser ? (

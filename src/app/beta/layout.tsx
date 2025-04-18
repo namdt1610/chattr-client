@@ -1,24 +1,23 @@
+'use client'
 import ConnectionStatus from '@/components/chat/ConnectionStatus'
 import Link from 'next/link'
-
+import { useLogout } from '@/hooks/useLogout'
+import { useUsers } from '@/hooks/useUsers'
+import { useSocket } from '@/hooks/useSocket'
 interface ChatLayoutProps {
     children: React.ReactNode
-    isLoggedIn: boolean
-    isConnected: boolean
-    handleLogout: () => void
 }
 
-const ChatLayout: React.FC<ChatLayoutProps> = ({
-    children,
-    isLoggedIn,
-    isConnected,
-    handleLogout,
-}) => {
+const ChatLayout: React.FC<ChatLayoutProps> = ({ children }) => {
+    const { handleLogout } = useLogout()
+    const { user, isLoggedIn } = useUsers(null)
+    const { isConnected } = useSocket(user)
+
     return (
         <div className="overflow-hidden h-screen w-screen bg-zinc-50 text-zinc-800 flex flex-col">
             {/* Header Section */}
             <header className="px-6 py-4 border-b border-zinc-100 flex justify-between items-center">
-                <div className='flex items-center gap-4'>
+                <div className="flex items-center gap-4">
                     <h1 className="text-xl font-normal">Chattr</h1>
                     <Link
                         href="/"

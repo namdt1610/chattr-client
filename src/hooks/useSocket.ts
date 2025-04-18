@@ -1,3 +1,4 @@
+'use client';
 import { useEffect, useState } from 'react';
 import io, { Socket } from 'socket.io-client';
 
@@ -18,6 +19,7 @@ export const useSocket = (user: { _id: string; username?: string | null } | null
             setSocket(socketInstance);
 
             socketInstance.on('connect', () => {
+                  setIsConnected(true);
                   console.log('Socket connected successfully');
             });
 

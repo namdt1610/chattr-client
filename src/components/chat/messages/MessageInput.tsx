@@ -4,7 +4,6 @@ import AttachmentPreview from './AttachmentPreview'
 import EmojiPicker from './EmojiPicker'
 import ActionButtons from './ActionButtons'
 import SendButton from './SendButton'
-import RecordButton from './RecordButton'
 
 interface MessageInputProps {
     message: string
@@ -19,7 +18,6 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
     const {
         showEmojiPicker,
         attachments,
-        isRecording,
         fileInputRef,
         handleInputChange,
         handleKeyDown,
@@ -28,7 +26,6 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
         handleFileChange,
         removeAttachment,
         triggerFileInput,
-        toggleRecording,
         toggleEmojiPicker,
     } = useMessageInput(props)
 
@@ -67,11 +64,6 @@ const MessageInput: React.FC<MessageInputProps> = (props) => {
                 />
 
                 <div className="flex items-center mr-2 gap-1">
-                    <RecordButton
-                        isRecording={isRecording}
-                        toggleRecording={toggleRecording}
-                    />
-
                     <SendButton
                         isDisabled={props.isDisabled}
                         message={props.message}

@@ -2,23 +2,30 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 
 export const useAuth = () => {
-      const [user, setUser] = useState(null)
-      const [isLoggedIn, setIsLoggedIn] = useState(false)
+    const [user, setUser] = useState(null)
+    const [isLoggedIn, setIsLoggedIn] = useState(false)
 
-      useEffect(() => {
+    useEffect(() => {
+        try {
             axios
-                  .get('http://localhost:5050/api/auth/me', {
-                        headers: {
-                              Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-                        },
-                        withCredentials: true,
-                  })
-                  .then((res) => {
-                        setUser(res.data.user)
-                        setIsLoggedIn(true)
-                  })
-                  .catch(() => setIsLoggedIn(false))
-      }, [])
+                .get('http://localhost:5050/api/auth/me', {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem(
+                            'accessToken'
+                        )}`,
+                    },
+                    withCredentials: true,
+                })
+                .then((res) => {
+                    setUser(res.data.user)
+                    setIsLoggedIn(true)
+                })
+                .catch(() => setIsLoggedIn(false))
+        } catch (error) {
+            console.error('Error fetching user data:', error)
+            setIsLoggedIn(false)
+        }
+    }, [])
 
-      return { user, isLoggedIn }
+    return { user, isLoggedIn }
 }

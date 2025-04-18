@@ -1,89 +1,111 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
+import { debounce } from 'lodash'
 
 interface UseMessageInputProps {
-  message: string
-  setMessage: React.Dispatch<React.SetStateAction<string>>
-  sendTyping: () => void
-  sendSeen: () => void
-  sendMessage: () => void
-  isDisabled: boolean
+    message: string
+    setMessage: React.Dispatch<React.SetStateAction<string>>
+    sendTyping: () => void
+    sendSeen: () => void
+    sendMessage: (attachments?: File[]) => void
+    isDisabled: boolean
 }
 
 export function useMessageInput({
-  message,
-  setMessage,
-  sendTyping,
-  sendSeen,
-  sendMessage: originalSendMessage,
-  isDisabled
+    message,
+    setMessage,
+    sendTyping,
+    sendSeen,
+    sendMessage: originalSendMessage,
+    isDisabled,
 }: UseMessageInputProps) {
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
-  const [attachments, setAttachments] = useState<File[]>([])
-  const [isRecording, setIsRecording] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setMessage(e.target.value)
-    sendTyping()
-  }
-  
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSendMessage()
-    }
-  }
-  
-  const handleSendMessage = () => {
-    if (message.trim() !== '' || attachments.length > 0) {
-      originalSendMessage()
-      // In a real app, you'd handle attachments upload here
-      setAttachments([])
-    }
-  }
-  
-  const insertEmoji = (emoji: string) => {
-    setMessage(prev => prev + emoji)
-  }
-  
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const newFiles = Array.from(e.target.files)
-      setAttachments(prev => [...prev, ...newFiles])
-    }
-  }
-  
-  const removeAttachment = (index: number) => {
-    setAttachments(prev => prev.filter((_, i) => i !== index))
-  }
-  
-  const triggerFileInput = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click()
-    }
-  }
-  
-  const toggleRecording = () => {
-    setIsRecording(!isRecording)
-  }
-  
-  const toggleEmojiPicker = () => {
-    setShowEmojiPicker(!showEmojiPicker)
-  }
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+    const [attachments, setAttachments] = useState<File[]>([])
+    const fileInputRef = useRef<HTMLInputElement>(null)
 
-  return {
-    showEmojiPicker,
-    attachments,
-    isRecording,
-    fileInputRef,
-    handleInputChange,
-    handleKeyDown,
-    handleSendMessage,
-    insertEmoji,
-    handleFileChange,
-    removeAttachment,
-    triggerFileInput,
-    toggleRecording,
-    toggleEmojiPicker
-  }
+    const debouncedSendTyping = useCallback(
+        debounce(() => {
+            sendTyping()
+        }, 500),
+        [sendTyping]
+    )
+
+    const handleInputChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            setMessage(e.target.value)
+            sendTyping()
+        },
+        [setMessage, sendTyping]
+    )
+
+    const handleSendMessage = useCallback(() => {
+        if (message.trim() !== '' || attachments.length > 0) {
+            originalSendMessage(attachments)
+            setAttachments([])
+        }
+    }, [message, attachments, originalSendMessage])
+
+    const handleKeyDown = useCallback(
+        (e: React.KeyboardEvent) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                handleSendMessage()
+            }
+        },
+        [handleSendMessage]
+    )
+
+    useEffect(() => {
+        sendSeen()
+    }, [message, sendSeen])
+
+    useEffect(() => {
+        return () => {
+            debouncedSendTyping.cancel()
+        }
+    }, [debouncedSendTyping])
+
+    const insertEmoji = useCallback(
+        (emoji: string) => {
+            setMessage((prev) => prev + emoji)
+        },
+        [setMessage]
+    )
+
+    const handleFileChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            if (e.target.files && e.target.files.length > 0) {
+                const newFiles = Array.from(e.target.files)
+                setAttachments((prev) => [...prev, ...newFiles])
+            }
+        },
+        []
+    )
+
+    const removeAttachment = useCallback((index: number) => {
+        setAttachments((prev) => prev.filter((_, i) => i !== index))
+    }, [])
+
+    const triggerFileInput = useCallback(() => {
+        if (fileInputRef.current) {
+            fileInputRef.current.click()
+        }
+    }, [])
+
+    const toggleEmojiPicker = useCallback(() => {
+        setShowEmojiPicker((prev) => !prev)
+    }, [])
+
+    return {
+        showEmojiPicker,
+        attachments,
+        fileInputRef,
+        handleInputChange,
+        handleKeyDown,
+        handleSendMessage,
+        insertEmoji,
+        handleFileChange,
+        removeAttachment,
+        triggerFileInput,
+        toggleEmojiPicker,
+    }
 }

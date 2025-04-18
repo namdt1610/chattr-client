@@ -1,3 +1,4 @@
+'use client';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Socket } from 'socket.io-client';
@@ -15,6 +16,7 @@ export const useUsers = (socket: Socket | null) => {
             username?: string | null;
       } | null>(null);
       const [isLoggedIn, setIsLoggedIn] = useState(false);
+      
       // Load current user
       useEffect(() => {
             try {
