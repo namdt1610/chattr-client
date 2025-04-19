@@ -5,6 +5,7 @@ interface UseMessageInputProps {
     message: string
     setMessage: React.Dispatch<React.SetStateAction<string>>
     sendTyping: () => void
+    sendStopTyping: () => void
     sendSeen: () => void
     sendMessage: (attachments?: File[]) => void
     isDisabled: boolean
@@ -14,6 +15,7 @@ export function useMessageInput({
     message,
     setMessage,
     sendTyping,
+    sendStopTyping,
     sendSeen,
     sendMessage: originalSendMessage,
     isDisabled,
@@ -21,18 +23,28 @@ export function useMessageInput({
     const [showEmojiPicker, setShowEmojiPicker] = useState(false)
     const [attachments, setAttachments] = useState<File[]>([])
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const typingTimerRef = useRef<NodeJS.Timeout | null>(null)
 
     const debouncedSendTyping = useCallback(
         debounce(() => {
             sendTyping()
-        }, 500),
+
+            if (typingTimerRef.current) {
+                clearTimeout(typingTimerRef.current)
+            }
+
+            typingTimerRef.current = setTimeout(() => {
+                sendStopTyping()
+                typingTimerRef.current = null
+            }, 2000)
+        }, 300),
         [sendTyping]
     )
 
     const handleInputChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
             setMessage(e.target.value)
-            sendTyping()
+            debouncedSendTyping()
         },
         [setMessage, sendTyping]
     )
@@ -40,9 +52,16 @@ export function useMessageInput({
     const handleSendMessage = useCallback(() => {
         if (message.trim() !== '' || attachments.length > 0) {
             originalSendMessage(attachments)
+            setMessage('')
             setAttachments([])
+            sendStopTyping()
+
+            if (typingTimerRef.current) {
+                clearTimeout(typingTimerRef.current)
+                typingTimerRef.current = null
+            }
         }
-    }, [message, attachments, originalSendMessage])
+    }, [message, attachments, originalSendMessage, setMessage, sendStopTyping])
 
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent) => {
@@ -55,12 +74,17 @@ export function useMessageInput({
     )
 
     useEffect(() => {
-        sendSeen()
+        if (message === '') {
+            sendSeen()
+        }
     }, [message, sendSeen])
 
     useEffect(() => {
         return () => {
             debouncedSendTyping.cancel()
+            if (typingTimerRef.current) {
+                clearTimeout(typingTimerRef.current)
+            }
         }
     }, [debouncedSendTyping])
 
@@ -107,5 +131,6 @@ export function useMessageInput({
         removeAttachment,
         triggerFileInput,
         toggleEmojiPicker,
+        isDisabled,
     }
 }

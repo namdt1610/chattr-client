@@ -18,7 +18,7 @@ const ChatLayout: React.FC<ChatLayoutProps> = ({ children }) => {
             {/* Header Section */}
             <header className="px-6 py-4 border-b border-zinc-100 flex justify-between items-center">
                 <div className="flex items-center gap-4">
-                    <h1 className="text-xl font-normal">Chattr</h1>
+                    <h1 className="text-2xl font-extrabold hover:text-blue-500 transition">Chattr</h1>
                     <Link
                         href="/"
                         className="flex items-center gap-1.5 text-sm font-medium text-zinc-600 hover:text-zinc-900 transition-colors"

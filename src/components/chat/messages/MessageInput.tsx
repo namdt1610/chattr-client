@@ -9,6 +9,7 @@ interface MessageInputProps {
     message: string
     setMessage: React.Dispatch<React.SetStateAction<string>>
     sendTyping: () => void
+    sendStopTyping: () => void
     sendSeen: () => void
     sendMessage: () => void
     isDisabled: boolean

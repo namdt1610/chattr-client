@@ -18,48 +18,64 @@ export const useChatStatus = ({
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     useEffect(() => {
-        if (!socket) {
-            socket = io('http://localhost:5050')
-        }
+        if (!socket || !conversationId || !userId) return
 
-        socket.emit('join', conversationId)
+        socket.on(
+            'chat:typing',
+            ({ userId: typingUserId, isTyping: typing }) => {
+                if (typingUserId !== userId) {
+                    setIsSeen(false)
+                    setIsTyping(typing)
 
-        socket.on('typing', ({ senderId }) => {
-            if (senderId !== userId) {
-                setIsTyping(true)
+                    // Reset trạng thái typing sau một khoảng thời gian
+                    if (typing && typingTimeoutRef.current) {
+                        clearTimeout(typingTimeoutRef.current)
+                    }
 
-                if (typingTimeoutRef.current) {
-                    clearTimeout(typingTimeoutRef.current)
+                    if (typing) {
+                        typingTimeoutRef.current = setTimeout(() => {
+                            setIsTyping(false)
+                            typingTimeoutRef.current = null
+                        }, 3000)
+                    }
                 }
-
-                typingTimeoutRef.current = setTimeout(() => {
-                    setIsTyping(false)
-                    typingTimeoutRef.current = null
-                }, 2000)
             }
-        })
+        )
 
-        socket.on('seen', ({ userId: seenUserId }) => {
+        socket.on('chat:seen', ({ userId: seenUserId }) => {
             if (seenUserId !== userId) {
                 setIsSeen(true)
+                // Tự động ẩn chỉ báo "seen" sau một khoảng thời gian
+                setTimeout(() => {
+                    setIsSeen(false)
+                }, 5000)
             }
         })
 
         return () => {
-            socket?.off('typing')
-            socket?.off('seen')
+            socket?.off('chat:typing')
+            socket?.off('chat:seen')
+            if (typingTimeoutRef.current) {
+                clearTimeout(typingTimeoutRef.current)
+            }
         }
     }, [socket, conversationId, userId])
 
     const sendTyping = useCallback(() => {
         if (socket && conversationId && userId) {
-            socket.emit('typing', { conversationId, senderId: userId })
+            socket.emit('chat:typing', { conversationId, isTyping: true })
+        }
+    }, [socket, conversationId, userId])
+
+    const sendStopTyping = useCallback(() => {
+        if (socket && conversationId && userId) {
+            socket.emit('chat:typing', { conversationId, isTyping: false })
         }
     }, [socket, conversationId, userId])
 
     const sendSeen = useCallback(() => {
         if (socket && conversationId && userId) {
-            socket.emit('seen', { conversationId, userId })
+            socket.emit('chat:seen', { conversationId })
         }
     }, [socket, conversationId, userId])
 
@@ -67,6 +83,7 @@ export const useChatStatus = ({
         isTyping,
         isSeen,
         sendTyping,
+        sendStopTyping,
         sendSeen,
     }
 }

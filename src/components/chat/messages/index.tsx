@@ -17,6 +17,7 @@ interface ChatSectionProps {
   message: string;
   setMessage: React.Dispatch<React.SetStateAction<string>>;
   sendTyping: () => void;
+  sendStopTyping: () => void;
   sendSeen: () => void;
   isTyping: boolean;
   isSeen: boolean;
@@ -38,6 +39,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({
   message,
   setMessage,
   sendTyping,
+  sendStopTyping,
   sendSeen,
   isTyping,
   isSeen,
@@ -73,6 +75,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({
             message={message}
             setMessage={setMessage}
             sendTyping={sendTyping}
+            sendStopTyping={sendStopTyping}
             sendSeen={sendSeen}
             sendMessage={selectedUser ? sendPrivateMessage : sendMessage}
             isDisabled={!selectedUser && !isLoggedIn}
