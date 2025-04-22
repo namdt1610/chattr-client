@@ -23,7 +23,9 @@ const RecentChats: React.FC<RecentChatsProps> = ({
                 {chats.map((chat) => (
                     <li key={chat.conversationId}>
                         <button
-                            onClick={() => setSelectedUser(chat.partner)}
+                            onClick={() => {
+                                setSelectedUser(chat.partner) // Sau đó mới set người dùng mới
+                            }}
                             className={`!bg-white w-full py-2 px-2 rounded-md flex items-center transition-colors ${
                                 selectedUser?.username === chat.partner.username
                                     ? 'bg-blue-50'

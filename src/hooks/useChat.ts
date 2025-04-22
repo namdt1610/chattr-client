@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import axios from 'axios'
 import { Socket } from 'socket.io-client'
 
@@ -24,10 +24,14 @@ export const useChat = (
 ) => {
     const [message, setMessage] = useState('')
     const [messages, setMessages] = useState<Message[]>([])
-    const chatContainerRef = useRef<HTMLDivElement>(null)
     const [isAtBottom, setIsAtBottom] = useState(true)
     const [hasNewMessage, setHasNewMessage] = useState(false)
-    const [conversationId, setConversationId] = useState<string | null>(null)
+    // const [conversationId, setConversationId] = useState<string | null>(null)
+    const chatContainerRef = useRef<HTMLDivElement>(null)
+    const conversationId = useMemo(() => {
+        if (!user?._id || !selectedUser?._id) return null
+        return [user._id, selectedUser._id].sort().join('_')
+    }, [user?._id, selectedUser?._id])
 
     // Join room (conversation) on socket connection
     useEffect(() => {
@@ -38,8 +42,8 @@ export const useChat = (
         }
 
         // Emitting to join room based on conversationId
-        const conversationId = [user._id, selectedUser._id].sort().join('_')
-        setConversationId(conversationId)
+        // const conversationId = [user._id, selectedUser._id].sort().join('_')
+        // setConversationId(conversationId)
 
         socket.emit('chat:join_room', conversationId)
         console.log(`🚪 User ${user._id} joined room: ${conversationId}`)
@@ -89,6 +93,9 @@ export const useChat = (
     useEffect(() => {
         if (!socket) return
 
+        socket.off('chat:message')
+        socket.off('chat:private_message')
+
         const handleMessage = (msg: any) => {
             setMessages((prev) => [
                 ...prev,
@@ -118,12 +125,12 @@ export const useChat = (
             socket.off('chat:message', handleMessage)
             socket.off('chat:private_message', handlePrivateMessage)
         }
-    }, [socket])
+    }, [socket, selectedUser?._id, user?.username, conversationId])
 
     // Load message history
     useEffect(() => {
         console.log('Loading message history...')
-        if (!selectedUser?._id || !user?._id) {
+        if (!selectedUser?._id || !user?._id || !conversationId) {
             console.log('Missing selectedUser or user information!')
             console.log(
                 'Details:',
@@ -134,6 +141,7 @@ export const useChat = (
             )
             return
         }
+        setMessages([])
 
         axios
             .get(
@@ -155,7 +163,7 @@ export const useChat = (
                     scrollToBottom()
                 }, 100)
             })
-    }, [selectedUser?._id, conversationId, user?.username])
+    }, [selectedUser?._id])
 
     // Send message functions
     const sendMessage = () => {

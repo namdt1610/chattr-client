@@ -122,6 +122,7 @@ const Chat = () => {
                         userList={userList}
                         selectedUser={selectedUser}
                         setSelectedUser={(user) => {
+                            setMessages([])
                             setSelectedUser(user)
                             setIsMobileSidebarOpen(false)
                         }}

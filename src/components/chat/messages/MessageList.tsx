@@ -24,6 +24,7 @@ const MessageList: React.FC<MessageListProps> = ({
             ref={chatContainerRef}
             className="flex-1 p-6 overflow-y-auto"
             onScroll={handleScroll}
+            key={selectedUser?._id || 'no-user'}
         >
             {messages.length > 0 ? (
                 messages.map((msg, idx) => (
