@@ -1,3 +1,6 @@
+Tôi sẽ cập nhật tài liệu README.md để thêm thông tin về tính năng gửi email khi đăng ký thành công. Dưới đây là phần cần bổ sung:
+
+```markdown
 # Tài liệu hướng dẫn Ứng dụng Chat
 
 ## Giới thiệu
@@ -21,6 +24,7 @@ Dự án được chia thành hai phần chính:
 - JWT cho xác thực
 - Redis cho quản lý phiên
 - Multer cho xử lý tệp đính kèm
+- Nodemailer cho gửi email thông báo
 
 ## Cài đặt và Khởi chạy
 
@@ -47,6 +51,9 @@ npm install
      REDIS_PASSWORD=
      ACCESS_TOKEN_EXPIRY=15m
      REFRESH_TOKEN_EXPIRY=7d
+     EMAIL_USER=your_email@gmail.com
+     EMAIL_PASSWORD=your_app_password
+     EMAIL_FROM=ChatApp <your_email@gmail.com>
      ```
 
 4. Khởi chạy server:
@@ -76,10 +83,15 @@ npm run dev
 ## Tính năng chính
 
 ### Xác thực người dùng
-- Đăng ký tài khoản
+- Đăng ký tài khoản (với xác nhận qua email)
 - Đăng nhập
 - Đăng xuất
 - Quản lý phiên làm việc (sử dụng Access và Refresh Token)
+
+### Thông báo Email
+- Gửi email chào mừng khi người dùng đăng ký thành công
+- Email với thiết kế đẹp và responsive
+- Tích hợp nodemailer để gửi email tự động
 
 ### Chat và nhắn tin
 - Tìm kiếm người dùng
@@ -94,6 +106,7 @@ npm run dev
 - Giao diện đáp ứng (responsive) cho cả thiết bị di động và máy tính
 - Hiển thị trạng thái kết nối
 - Console Log để theo dõi hoạt động của ứng dụng
+- Giao diện đăng ký và đăng nhập với hiệu ứng động
 
 ## Cấu trúc API Backend
 
@@ -116,6 +129,7 @@ npm run dev
 - _id: String
 - username: String
 - password: String
+- email: String (tuỳ chọn)
 - socketId: String (nullable)
 
 ### Message
@@ -168,6 +182,7 @@ npm run dev
 - **Cơ sở dữ liệu**: MongoDB
 - **Bộ nhớ cache**: Redis
 - **Tệp đính kèm**: Multer
+- **Email**: Nodemailer
 - **Kiểm thử**: Jest, Supertest
 
 ## Phát triển và mở rộng
@@ -178,6 +193,10 @@ npm run dev
    - Gửi tin nhắn audio và video
    - Tạo nhóm trò chuyện
    - Thêm chức năng gọi video
+   - Mở rộng tích hợp email:
+     - Gửi thông báo khi có tin nhắn mới
+     - Xác thực email bằng mã OTP
+     - Khôi phục mật khẩu qua email
 
 2. **Cải thiện hiệu suất**:
    - Tối ưu hóa truy vấn cơ sở dữ liệu
@@ -202,6 +221,11 @@ npm run dev
 - Kiểm tra thư mục uploads có tồn tại và có quyền ghi trong backend
 - Kiểm tra kích thước tệp không vượt quá giới hạn cấu hình
 
+### Vấn đề gửi email
+- Đảm bảo tài khoản email đã cấu hình trong .env
+- Nếu sử dụng Gmail, cần tạo "App password" thay vì mật khẩu bình thường
+- Kiểm tra cài đặt bảo mật của tài khoản email
+
 ## Tài liệu tham khảo
 
 - [Next.js Documentation](https://nextjs.org/docs)
@@ -209,6 +233,7 @@ npm run dev
 - [MongoDB Documentation](https://docs.mongodb.com)
 - [Express.js Documentation](https://expressjs.com)
 - [JWT.io](https://jwt.io)
+- [Nodemailer Documentation](https://nodemailer.com/about/)
 
 ---
 

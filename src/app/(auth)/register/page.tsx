@@ -1,11 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { motion } from 'framer-motion'
 import ConsoleLog from '@/components/ConsoleLog'
 import { useConsoleLogs } from '@/hooks/useLogs'
+import { useRegister } from '@/hooks/useRegister'
+import Link from 'next/link'
+import { motion } from 'framer-motion'
 
 const RegisterPage = () => {
     const logs = useConsoleLogs()
@@ -13,34 +13,16 @@ const RegisterPage = () => {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [confirmPassword, setConfirmPassword] = useState('')
-    const [error, setError] = useState('')
-    const [isLoading, setIsLoading] = useState(false)
-    const router = useRouter()
+    const { register, error, isLoading } = useRegister()
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault()
-        setError('')
-        
+
         if (password !== confirmPassword) {
-            setError('Passwords do not match')
-            return
+            return // Error sẽ được xử lý trong hook useRegister
         }
 
-        try {
-            setIsLoading(true)
-            
-            // Replace with actual API call
-            // Simulating API delay
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            
-            console.log('Registered with', username, email, password)
-            router.push('/login')
-            
-        } catch (err: any) {
-            setError(err.message || 'Registration failed')
-        } finally {
-            setIsLoading(false)
-        }
+        await register({ username, email, password })
     }
 
     // Animation variants
@@ -63,7 +45,7 @@ const RegisterPage = () => {
 
     return (
         <motion.div
-            className="min-h-screen w-full bg-gradient-to-br from-indigo-50 to-blue-100 flex flex-col"
+            className="overflow-hidden min-h-screen w-full bg-gradient-to-br from-indigo-50 to-blue-100 flex flex-col"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
@@ -86,7 +68,7 @@ const RegisterPage = () => {
             </motion.div>
 
             {/* Register Card */}
-            <div className="flex-grow flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12">
+            <div className="flex-grow flex items-center justify-center px-4 sm:px-6 lg:px-8">
                 <motion.div
                     className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg"
                     variants={containerVariants}
@@ -159,7 +141,9 @@ const RegisterPage = () => {
                                         autoComplete="email"
                                         required
                                         value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
+                                        onChange={(e) =>
+                                            setEmail(e.target.value)
+                                        }
                                         disabled={isLoading}
                                         className="appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                                         placeholder="Your email address"
@@ -246,7 +230,11 @@ const RegisterPage = () => {
                                 className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-70 disabled:cursor-not-allowed"
                                 whileHover={{ scale: 1.03 }}
                                 whileTap={{ scale: 0.98 }}
-                                transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+                                transition={{
+                                    type: 'spring',
+                                    stiffness: 400,
+                                    damping: 10,
+                                }}
                             >
                                 {isLoading ? (
                                     <>
@@ -285,8 +273,14 @@ const RegisterPage = () => {
                             <p className="text-gray-600">
                                 Already have an account?{' '}
                                 <motion.span
-                                    whileHover={{ color: '#4338ca', scale: 1.05 }}
-                                    transition={{ type: 'spring', stiffness: 400 }}
+                                    whileHover={{
+                                        color: '#4338ca',
+                                        scale: 1.05,
+                                    }}
+                                    transition={{
+                                        type: 'spring',
+                                        stiffness: 400,
+                                    }}
                                 >
                                     <Link
                                         href="/login"
