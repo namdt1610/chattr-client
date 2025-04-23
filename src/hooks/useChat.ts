@@ -26,7 +26,6 @@ export const useChat = (
     const [messages, setMessages] = useState<Message[]>([])
     const [isAtBottom, setIsAtBottom] = useState(true)
     const [hasNewMessage, setHasNewMessage] = useState(false)
-    // const [conversationId, setConversationId] = useState<string | null>(null)
     const chatContainerRef = useRef<HTMLDivElement>(null)
     const conversationId = useMemo(() => {
         if (!user?._id || !selectedUser?._id) return null
@@ -40,10 +39,6 @@ export const useChat = (
             console.log('user:', user, 'selectedUser:', selectedUser)
             return
         }
-
-        // Emitting to join room based on conversationId
-        // const conversationId = [user._id, selectedUser._id].sort().join('_')
-        // setConversationId(conversationId)
 
         socket.emit('chat:join_room', conversationId)
         console.log(`🚪 User ${user._id} joined room: ${conversationId}`)
@@ -104,6 +99,7 @@ export const useChat = (
         }
 
         const handlePrivateMessage = (msg: any) => {
+            if (msg.conversationId !== conversationId) return
             console.log(
                 `${selectedUser?.username} nhận tin nhắn từ ${msg.from}: ${msg.message}, ${msg.attachments}`
             )
