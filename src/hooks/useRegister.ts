@@ -2,7 +2,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import useSWRMutation from 'swr/mutation'
-import api from '@/services/api'
 
 interface RegisterCredentials {
     username: string
@@ -23,12 +22,21 @@ async function registerFetcher(
     url: string,
     { arg }: { arg: RegisterCredentials }
 ) {
-    try {
-        const response = await api.post(url, arg)
-        return response.data
-    } catch (error) {
-        throw error
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(arg),
+        credentials: 'include',
+    })
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}))
+        throw { response: { data: error, status: response.status } }
     }
+
+    return response.json()
 }
 
 export function useRegister() {

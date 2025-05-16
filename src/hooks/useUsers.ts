@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect } from 'react'
-import api from '@/services/api'
 import { Socket } from 'socket.io-client'
 import { User } from '@/types/user'
 import { useAPI } from './useSWRHook'
@@ -20,6 +19,13 @@ const mapToUser = (apiUser: {
 
 interface UserData {
     user: {
+        _id: string
+        username: string | null
+    }
+}
+
+interface SearchUsersResponse {
+    [key: number]: {
         _id: string
         username: string | null
     }
@@ -67,24 +73,32 @@ export const useUsers = (socket: Socket | null) => {
         }
     }, [socket])
 
+    // Hook to search users with useAPI instead of direct API call
+    const { data: searchResults, mutate: refreshSearch } =
+        useAPI<SearchUsersResponse>(
+            searchUser ? `/api/users/${searchUser}` : null,
+            {
+                revalidateOnFocus: false,
+            }
+        )
+
+    // Update userList when search results change
+    useEffect(() => {
+        if (searchResults) {
+            const users = Object.values(searchResults).map(mapToUser)
+            setUserList(users)
+        }
+    }, [searchResults])
+
     // Search users
     const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const query = e.target.value.trim()
         setSearchUser(query)
 
-        if (query) {
-            try {
-                const response = await api.get(`/api/users/${query}`, {
-                    headers: { 'Content-Type': 'application/json' },
-                    withCredentials: true,
-                })
-                setUserList(response.data.map(mapToUser))
-                console.log(response.data)
-            } catch (error) {
-                console.error('Error fetching users:', error)
-            }
-        } else {
+        if (!query) {
             setUserList([])
+        } else {
+            refreshSearch()
         }
     }
 

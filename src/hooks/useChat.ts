@@ -5,7 +5,7 @@ import { Message } from '@/types/message'
 import { User } from '@/types/user'
 import { Attachment } from '@/types/attachment'
 import { useAPI } from './useSWRHook'
-import api from '@/services/api'
+import useSWRMutation from 'swr/mutation'
 
 // Local types for socket message response
 interface MessageResponse {
@@ -18,6 +18,21 @@ interface MessageResponse {
 // Định nghĩa response từ API
 interface MessageHistoryResponse {
     messages: Message[]
+}
+
+// Mutation fetcher để gửi tin nhắn có attachment
+async function sendMessageFetcher(url: string, { arg }: { arg: FormData }) {
+    const response = await fetch(url, {
+        method: 'POST',
+        body: arg,
+        credentials: 'include',
+    })
+
+    if (!response.ok) {
+        throw new Error('Failed to send message with attachments')
+    }
+
+    return response.json()
 }
 
 export const useChat = (
@@ -49,6 +64,12 @@ export const useChat = (
                 }
             },
         }
+    )
+
+    // Sử dụng SWR mutation cho việc gửi tin nhắn có attachment
+    const { trigger: sendWithAttachments } = useSWRMutation(
+        '/api/messages/send',
+        sendMessageFetcher
     )
 
     // Join room (conversation) on socket connection
@@ -217,12 +238,8 @@ export const useChat = (
                     formData.append('attachments', file)
                 })
 
-                // Send message with attachments via API
-                await api.post('/api/messages/send', formData, {
-                    headers: {
-                        'Content-Type': 'multipart/form-data',
-                    },
-                })
+                // Send message with attachments via SWR mutation
+                await sendWithAttachments(formData)
             } else {
                 // Send simple text message via socket
                 socket.emit('chat:private_message', {
@@ -251,9 +268,6 @@ export const useChat = (
 
             setMessages((prev) => [...prev, newMessage])
             setMessage('')
-
-            // Refresh message history
-            refreshMessages()
         } catch (error) {
             console.error('Error sending private message:', error)
         }
@@ -263,14 +277,12 @@ export const useChat = (
         message,
         setMessage,
         messages,
-        setMessages,
         sendMessage,
         sendPrivateMessage,
         chatContainerRef,
         handleScroll,
         scrollToBottom,
+        isAtBottom,
         hasNewMessage,
-        conversationId,
-        refreshMessages,
     }
 }

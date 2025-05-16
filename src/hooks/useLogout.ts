@@ -1,15 +1,22 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import useSWRMutation from 'swr/mutation'
-import api from '@/services/api'
 
 async function logoutFetcher(url: string) {
-    try {
-        const response = await api.post(url, {}, { withCredentials: true })
-        return response.data
-    } catch (error) {
-        throw error
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+    })
+
+    if (!response.ok) {
+        const error = await response.json().catch(() => ({}))
+        throw { response: { data: error, status: response.status } }
     }
+
+    return response.json()
 }
 
 export const useLogout = () => {

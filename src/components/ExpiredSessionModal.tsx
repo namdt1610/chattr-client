@@ -22,6 +22,19 @@ const ExpiredSessionModal: React.FC<ExpiredSessionModalProps> = ({
         }
     }, [isOpen])
 
+    // Listen for the session-expired event
+    useEffect(() => {
+        const handleSessionExpired = () => {
+            setIsVisible(true)
+        }
+
+        window.addEventListener('session-expired', handleSessionExpired)
+
+        return () => {
+            window.removeEventListener('session-expired', handleSessionExpired)
+        }
+    }, [])
+
     // Actual close handler that triggers the animation first
     const handleClose = () => {
         setIsVisible(false)
@@ -40,7 +53,7 @@ const ExpiredSessionModal: React.FC<ExpiredSessionModalProps> = ({
         }, 300)
     }
 
-    if (!isOpen) return null
+    if (!isOpen && !isVisible) return null
 
     return (
         <div className="fixed inset-0 z-50 overflow-y-auto">
