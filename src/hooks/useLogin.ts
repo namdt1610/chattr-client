@@ -36,8 +36,7 @@ export function useLogin() {
         string,
         LoginCredentials
     >('/api/auth/login', loginFetcher, {
-        onSuccess: (data) => {
-            // Lưu token và chuyển hướng người dùng
+        onSuccess: () => {
             router.push('/beta')
         },
         onError: (err: any) => {
