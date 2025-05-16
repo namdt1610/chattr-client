@@ -19,119 +19,154 @@ const api = axios.create({
 
 // Define interface for queue items with proper types
 interface QueueItem {
-    resolve: (value: string | null) => void
+    resolve: (value: unknown) => void
     reject: (reason?: unknown) => void
+    config: AxiosRequestConfig
 }
 
 let isRefreshing = false
 let failedQueue: QueueItem[] = []
+let tokenExpirationTime: number | null = null // Lưu thời gian hết hạn của token
 
-const processQueue = (error: unknown | null, token: string | null = null) => {
-    failedQueue.forEach((prom) => {
+// Kiểm tra token có hợp lệ không (chưa hết hạn)
+const isTokenValid = (): boolean => {
+    const expirationTime = tokenExpirationTime
+    return !!expirationTime && Date.now() < expirationTime
+}
+
+// Xử lý hàng đợi các request bị lỗi 401
+const processQueue = (
+    error: unknown | null,
+    newToken: string | null = null
+) => {
+    failedQueue.forEach((item) => {
         if (error) {
-            prom.reject(error)
+            item.reject(error)
+        } else if (newToken && item.config.headers) {
+            item.config.headers['Authorization'] = `Bearer ${newToken}`
+            item.resolve(axios(item.config))
         } else {
-            prom.resolve(token)
+            item.resolve(axios(item.config))
         }
     })
 
     failedQueue = []
 }
 
-// Add Authorization header to every request
+// Thêm token vào header chỉ khi cần thiết
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('accessToken')
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`
+        // Kiểm tra nếu là request refresh token, không cần thêm Authorization header
+        const isRefreshRequest = config.url?.includes('/auth/refresh')
+
+        if (!isRefreshRequest) {
+            const token = localStorage.getItem('accessToken')
+            if (token) {
+                config.headers.Authorization = `Bearer ${token}`
+            }
         }
         return config
     },
     (error) => Promise.reject(error)
 )
 
-// Handle 401 errors and automatically refresh token
+// Xử lý lỗi 401 và tự động refresh token
 api.interceptors.response.use(
     (response) => response,
     async (error: AxiosError) => {
-        const originalRequest = error.config as AxiosRequestConfig & {
+        const originalConfig = error.config as AxiosRequestConfig & {
             _retry?: boolean
         }
 
-        // If 401 (Unauthorized) error and haven't tried refreshing
-        if (error.response?.status === 401 && !originalRequest._retry) {
-            if (isRefreshing) {
-                return new Promise<string | null>((resolve, reject) => {
-                    failedQueue.push({ resolve, reject })
-                })
-                    .then((token) => {
-                        if (originalRequest.headers && token) {
-                            originalRequest.headers[
-                                'Authorization'
-                            ] = `Bearer ${token}`
-                        }
-                        return axios(originalRequest)
-                    })
-                    .catch((err) => Promise.reject(err))
-            }
-
-            originalRequest._retry = true
-            isRefreshing = true
-
-            try {
-                // Get refresh token from localStorage
-                const refreshToken = localStorage.getItem('refreshToken')
-
-                if (!refreshToken) {
-                    throw new Error('No refresh token available')
-                }
-
-                // Call API to refresh token - use withCredentials to send cookies if available
-                const response = await axios.post(
-                    `${process.env.NEXT_PUBLIC_BASE_API_URL}/auth/refresh`,
-                    { refreshToken }, // Send refresh token from localStorage
-                    { withCredentials: true } // Send cookies (if any)
-                )
-
-                const { accessToken, refreshToken: newRefreshToken } =
-                    response.data
-
-                // Save new tokens to localStorage
-                localStorage.setItem('accessToken', accessToken)
-                localStorage.setItem('refreshToken', newRefreshToken)
-
-                // Update header for original request
-                if (originalRequest.headers) {
-                    originalRequest.headers[
-                        'Authorization'
-                    ] = `Bearer ${accessToken}`
-                }
-
-                // Process queued requests
-                processQueue(null, accessToken)
-
-                isRefreshing = false
-
-                // Retry original request
-                return axios(originalRequest)
-            } catch (error) {
-                // If refresh fails, handle logout
-                localStorage.removeItem('accessToken')
-                localStorage.removeItem('refreshToken')
-
-                // Notify waiting requests
-                processQueue(error, null)
-
-                isRefreshing = false
-
-                // Redirect to login page
-                window.location.href = '/beta?showLogin=true'
-
-                return Promise.reject(error)
-            }
+        // Nếu không có config hoặc đã retry, từ chối promise
+        if (!originalConfig || originalConfig._retry) {
+            return Promise.reject(error)
         }
 
-        return Promise.reject(error)
+        // Chỉ xử lý lỗi 401 Unauthorized
+        if (error.response?.status !== 401) {
+            return Promise.reject(error)
+        }
+
+        // Đánh dấu request này đã được thử refresh
+        originalConfig._retry = true
+
+        // Nếu đang refresh, thêm request vào hàng đợi
+        if (isRefreshing) {
+            return new Promise((resolve, reject) => {
+                failedQueue.push({
+                    resolve,
+                    reject,
+                    config: originalConfig,
+                })
+            })
+        }
+
+        isRefreshing = true
+
+        try {
+            // Lấy refresh token từ localStorage
+            const refreshToken = localStorage.getItem('refreshToken')
+
+            if (!refreshToken) {
+                throw new Error('Không có refresh token')
+            }
+
+            // Gọi API để refresh token
+            const response = await axios.post(
+                `${getBaseUrl()}/api/auth/refresh`,
+                { refreshToken },
+                { withCredentials: true }
+            )
+
+            const {
+                accessToken,
+                refreshToken: newRefreshToken,
+                expiresIn,
+            } = response.data
+
+            // Lưu tokens mới vào localStorage
+            localStorage.setItem('accessToken', accessToken)
+            localStorage.setItem('refreshToken', newRefreshToken)
+
+            // Tính và lưu thời gian hết hạn (nếu API trả về expiresIn)
+            if (expiresIn) {
+                // expiresIn thường là giây
+                tokenExpirationTime = Date.now() + expiresIn * 1000
+            }
+
+            // Cập nhật header cho request gốc
+            originalConfig.headers = {
+                ...originalConfig.headers,
+                Authorization: `Bearer ${accessToken}`,
+            }
+
+            // Xử lý hàng đợi các request đang chờ
+            processQueue(null, accessToken)
+
+            isRefreshing = false
+
+            // Thử lại request gốc
+            return axios(originalConfig)
+        } catch (error) {
+            // Nếu refresh thất bại, xử lý đăng xuất
+            localStorage.removeItem('accessToken')
+            localStorage.removeItem('refreshToken')
+            tokenExpirationTime = null
+
+            // Thông báo cho các request đang đợi
+            processQueue(error)
+
+            isRefreshing = false
+
+            // Chuyển hướng đến trang đăng nhập
+            // Sử dụng timeout để tránh chuyển hướng khi đang xử lý nhiều request
+            setTimeout(() => {
+                window.location.href = '/login'
+            }, 100)
+
+            return Promise.reject(error)
+        }
     }
 )
 
