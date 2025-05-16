@@ -1,7 +1,20 @@
 import axios, { AxiosError, AxiosRequestConfig } from 'axios'
 
+// Use environment variables with fallback to local dev and production URLs
+const getBaseUrl = () => {
+    // Use NEXT_PUBLIC_BASE_API_URL if defined
+    if (process.env.NEXT_PUBLIC_BASE_API_URL) {
+        return process.env.NEXT_PUBLIC_BASE_API_URL
+    }
+
+    // Otherwise use environment-specific defaults
+    return process.env.NODE_ENV === 'production'
+        ? 'https://chatapp-backend-l6tv.onrender.com'
+        : 'http://localhost:5050'
+}
+
 const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_BASE_API_URL,
+    baseURL: getBaseUrl(),
 })
 
 // Define interface for queue items with proper types

@@ -5,6 +5,13 @@ import { Message } from '@/types/message'
 import { User } from '@/types/user'
 import { Attachment } from '@/types/attachment'
 
+// Get API URL based on environment
+const getApiUrl = () => {
+    return process.env.NODE_ENV === 'production'
+        ? 'https://chatapp-backend-l6tv.onrender.com'
+        : 'http://localhost:5050'
+}
+
 interface MessageListProps {
     messages: Message[]
     selectedUser: User | null
@@ -24,6 +31,8 @@ const MessageList: React.FC<MessageListProps> = ({
     hasNewMessage,
     scrollToBottom,
 }) => {
+    const apiUrl = getApiUrl()
+
     return (
         <div
             ref={chatContainerRef}
@@ -57,7 +66,7 @@ const MessageList: React.FC<MessageListProps> = ({
                                             )
                                         return isImage ? (
                                             <Image
-                                                src={`http://localhost:5050/${attachment.fileUrl}`}
+                                                src={`${apiUrl}/${attachment.fileUrl}`}
                                                 crossOrigin="anonymous"
                                                 alt={`attachment-${index}`}
                                                 key={index}
@@ -67,7 +76,7 @@ const MessageList: React.FC<MessageListProps> = ({
                                             />
                                         ) : (
                                             <a
-                                                href={`http://localhost:5050/${attachment.fileUrl}`}
+                                                href={`${apiUrl}/${attachment.fileUrl}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 key={index}

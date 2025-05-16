@@ -7,6 +7,13 @@ interface RegisterCredentials {
     password: string
 }
 
+// Get API URL based on environment
+const getApiUrl = () => {
+    return process.env.NODE_ENV === 'production'
+        ? 'https://chatapp-backend-l6tv.onrender.com'
+        : 'http://localhost:5050'
+}
+
 export function useRegister() {
     const [error, setError] = useState<string>('')
     const [isLoading, setIsLoading] = useState<boolean>(false)
@@ -21,17 +28,19 @@ export function useRegister() {
         setError('')
 
         try {
-            const response = await fetch(
-                'http://localhost:5050/api/auth/register',
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ username, email, password }),
-                    credentials: 'include',
-                }
+            const apiUrl = getApiUrl()
+            console.log(
+                `Using API URL: ${apiUrl} in ${process.env.NODE_ENV} mode`
             )
+
+            const response = await fetch(`${apiUrl}/api/auth/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username, email, password }),
+                credentials: 'include',
+            })
 
             const data = await response.json()
 

@@ -188,18 +188,9 @@ export const useChat = (
         }
         setMessages([])
 
-        api.get(
-            `http://localhost:5050/api/messages/history?conversationId=${conversationId}`,
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${localStorage.getItem(
-                        'accessToken'
-                    )}`,
-                },
-                withCredentials: true,
-            }
-        ).then((res) => {
+        api.get(`/api/messages/history?conversationId=${conversationId}`, {
+            withCredentials: true,
+        }).then((res) => {
             console.log('Message history:', res.data.messages)
             // Ensure messages meet the expected Message type interface
             setMessages(
@@ -310,18 +301,9 @@ export const useChat = (
                 console.log(`${key}: ${value}`)
             }
 
-            const response = await api.post(
-                'http://localhost:5050/api/messages/send',
-                formData,
-                {
-                    headers: {
-                        Authorization: `Bearer ${localStorage.getItem(
-                            'accessToken'
-                        )}`,
-                    },
-                    withCredentials: true,
-                }
-            )
+            const response = await api.post('/api/messages/send', formData, {
+                withCredentials: true,
+            })
 
             console.log('Message sent successfully:', response.data)
             setMessage('')

@@ -28,12 +28,7 @@ export const useUsers = (socket: Socket | null) => {
     // Load current user
     useEffect(() => {
         try {
-            api.get('http://localhost:5050/api/auth/me', {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem(
-                        'accessToken'
-                    )}`,
-                },
+            api.get('/api/auth/me', {
                 withCredentials: true,
             }).then((res) => {
                 if (res.status == 401) {
@@ -71,13 +66,10 @@ export const useUsers = (socket: Socket | null) => {
 
         if (query) {
             try {
-                const response = await api.get(
-                    `http://localhost:5050/api/users/${query}`,
-                    {
-                        headers: { 'Content-Type': 'application/json' },
-                        withCredentials: true,
-                    }
-                )
+                const response = await api.get(`/api/users/${query}`, {
+                    headers: { 'Content-Type': 'application/json' },
+                    withCredentials: true,
+                })
                 setUserList(response.data.map(mapToUser))
                 console.log(response.data)
             } catch (error) {

@@ -15,7 +15,17 @@ export const useSocket = (currentUser: unknown) => {
                 ? localStorage.getItem('accessToken')
                 : null
 
-        const socketInstance = io('http://localhost:5050', {
+        // Use localhost in development, Render URL in production
+        const socketUrl =
+            process.env.NODE_ENV === 'production'
+                ? 'https://chatapp-backend-l6tv.onrender.com'
+                : 'http://localhost:5050'
+
+        console.log(
+            `Using socket URL: ${socketUrl} in ${process.env.NODE_ENV} mode`
+        )
+
+        const socketInstance = io(socketUrl, {
             withCredentials: true,
             transports: ['websocket'],
             auth: { token },
