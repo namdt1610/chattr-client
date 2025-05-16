@@ -1,5 +1,8 @@
+'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import useSWRMutation from 'swr/mutation'
+import api from '@/services/api'
 
 interface RegisterCredentials {
     username: string
@@ -7,54 +10,56 @@ interface RegisterCredentials {
     password: string
 }
 
-// Get API URL based on environment
-const getApiUrl = () => {
-    return process.env.NODE_ENV === 'production'
-        ? 'https://chatapp-backend-l6tv.onrender.com'
-        : 'http://localhost:5050'
+interface RegisterResponse {
+    message: string
+    user: {
+        _id: string
+        username: string
+        email: string
+    }
+}
+
+async function registerFetcher(
+    url: string,
+    { arg }: { arg: RegisterCredentials }
+) {
+    try {
+        const response = await api.post(url, arg)
+        return response.data
+    } catch (error) {
+        throw error
+    }
 }
 
 export function useRegister() {
     const [error, setError] = useState<string>('')
-    const [isLoading, setIsLoading] = useState<boolean>(false)
     const router = useRouter()
 
-    const register = async ({
-        username,
-        email,
-        password,
-    }: RegisterCredentials): Promise<void> => {
-        setIsLoading(true)
+    const { trigger, isMutating: isLoading } = useSWRMutation<
+        RegisterResponse,
+        Error,
+        string,
+        RegisterCredentials
+    >('/api/auth/register', registerFetcher, {
+        onSuccess: () => {
+            console.log('Registration successful!')
+            router.push('/login')
+        },
+        onError: (err: any) => {
+            const message = err.response?.data?.message || 'Registration failed'
+            setError(message)
+            console.error('Registration error:', err)
+        },
+    })
+
+    const register = async (
+        credentials: RegisterCredentials
+    ): Promise<void> => {
         setError('')
-
         try {
-            const apiUrl = getApiUrl()
-            console.log(
-                `Using API URL: ${apiUrl} in ${process.env.NODE_ENV} mode`
-            )
-
-            const response = await fetch(`${apiUrl}/api/auth/register`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username, email, password }),
-                credentials: 'include',
-            })
-
-            const data = await response.json()
-
-            if (response.ok) {
-                console.log('Registration successful!')
-                router.push('/login')
-            } else {
-                setError(data.message || 'Registration failed')
-            }
-        } catch (error) {
-            setError('An error occurred during registration')
-            console.error('Registration error:', error)
-        } finally {
-            setIsLoading(false)
+            await trigger(credentials)
+        } catch {
+            // Lỗi này sẽ được xử lý trong onError
         }
     }
 

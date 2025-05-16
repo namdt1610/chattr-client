@@ -1,60 +1,59 @@
+'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import useSWRMutation from 'swr/mutation'
+import api from '@/services/api'
 
 interface LoginCredentials {
     username: string
     password: string
 }
 
-// Get API URL based on environment
-const getApiUrl = () => {
-    return process.env.NODE_ENV === 'production'
-        ? 'https://chatapp-backend-l6tv.onrender.com'
-        : 'http://localhost:5050'
+interface LoginResponse {
+    user: {
+        _id: string
+        username: string
+    }
+}
+
+// Hàm fetcher sử dụng API service
+async function loginFetcher(url: string, { arg }: { arg: LoginCredentials }) {
+    try {
+        const response = await api.post(url, arg)
+        return response.data
+    } catch (error) {
+        throw error
+    }
 }
 
 export function useLogin() {
     const [error, setError] = useState<string>('')
-    const [isLoading, setIsLoading] = useState<boolean>(false)
     const router = useRouter()
 
-    const login = async ({
-        username,
-        password,
-    }: LoginCredentials): Promise<void> => {
-        setIsLoading(true)
+    const { trigger, isMutating: isLoading } = useSWRMutation<
+        LoginResponse,
+        Error,
+        string,
+        LoginCredentials
+    >('/api/auth/login', loginFetcher, {
+        onSuccess: (data) => {
+            // Lưu token và chuyển hướng người dùng
+            router.push('/beta')
+        },
+        onError: (err: any) => {
+            // Xử lý lỗi từ API
+            const message = err.response?.data?.message || 'Login failed'
+            setError(message)
+            console.error('Login error:', err)
+        },
+    })
+
+    const login = async (credentials: LoginCredentials): Promise<void> => {
         setError('')
-
         try {
-            const apiUrl = getApiUrl()
-            console.log(
-                `Using API URL: ${apiUrl} in ${process.env.NODE_ENV} mode`
-            )
-
-            const response = await fetch(`${apiUrl}/api/auth/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ username, password }),
-                credentials: 'include',
-            })
-
-            const data = await response.json()
-
-            if (response.ok) {
-                console.log('Login successful:', data.accessToken)
-                localStorage.setItem('accessToken', data.accessToken)
-                alert('Login successful! Now connecting to WebSocket...')
-                router.push('/beta')
-            } else {
-                setError(data.message || 'Login failed')
-            }
-        } catch (error) {
-            setError('An error occurred during login')
-            console.error('Login error:', error)
-        } finally {
-            setIsLoading(false)
+            await trigger(credentials)
+        } catch {
+            // Lỗi này sẽ được xử lý trong onError
         }
     }
 

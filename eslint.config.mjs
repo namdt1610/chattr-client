@@ -16,6 +16,14 @@ const eslintConfig = [
             // Tắt các quy tắc đang gây vấn đề trong build
             '@typescript-eslint/no-unsafe-function-type': 'off',
             '@typescript-eslint/no-explicit-any': 'off',
+            // Cho phép biến có tiền tố underscore không được sử dụng
+            '@typescript-eslint/no-unused-vars': [
+                'error',
+                {
+                    argsIgnorePattern: '^_',
+                    varsIgnorePattern: '^_',
+                },
+            ],
         },
     },
 ]

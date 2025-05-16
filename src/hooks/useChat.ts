@@ -1,60 +1,55 @@
+'use client'
 import { useState, useEffect, useRef, useMemo } from 'react'
-import api from '../services/api'
 import { Socket } from 'socket.io-client'
-import { Message as MessageType } from '@/types/message'
-import { User as UserType } from '@/types/user'
+import { Message } from '@/types/message'
+import { User } from '@/types/user'
+import { Attachment } from '@/types/attachment'
+import { useAPI } from './useSWRHook'
+import api from '@/services/api'
 
-// Local types for MessageResponse from socket
+// Local types for socket message response
 interface MessageResponse {
     from: string
     message: string
     conversationId: string
-    attachments?: Array<{
-        id: string
-        filename: string
-        fileType: string
-        fileSize: number
-        fileUrl: string
-    }>
+    attachments?: Attachment[]
 }
 
-// Define a type for the API message response
-interface ApiMessage {
-    id?: string
-    content: string
-    createdAt?: string
-    updatedAt?: string
-    attachments?: Array<{
-        id: string
-        filename: string
-        fileType: string
-        fileSize: number
-        fileUrl: string
-    }>
-    sender?: {
-        _id: string
-        username: string
-        email?: string
-        avatar?: string
-        createdAt?: string
-        updatedAt?: string
-    }
+// Định nghĩa response từ API
+interface MessageHistoryResponse {
+    messages: Message[]
 }
 
 export const useChat = (
     socket: Socket | null,
-    user: UserType | null,
-    selectedUser: UserType | null
+    user: User | null,
+    selectedUser: User | null
 ) => {
     const [message, setMessage] = useState('')
-    const [messages, setMessages] = useState<MessageType[]>([])
+    const [messages, setMessages] = useState<Message[]>([])
     const [isAtBottom, setIsAtBottom] = useState(true)
     const [hasNewMessage, setHasNewMessage] = useState(false)
     const chatContainerRef = useRef<HTMLDivElement>(null)
+
     const conversationId = useMemo(() => {
         if (!user?._id || !selectedUser?._id) return null
         return [user._id, selectedUser._id].sort().join('_')
     }, [user?._id, selectedUser?._id])
+
+    // Sử dụng useAPI để lấy lịch sử tin nhắn
+    const { mutate: refreshMessages } = useAPI<MessageHistoryResponse>(
+        conversationId
+            ? `/api/messages/history?conversationId=${conversationId}`
+            : null,
+        {
+            revalidateOnFocus: false,
+            onSuccess: (data) => {
+                if (data?.messages && Array.isArray(data.messages)) {
+                    setMessages(data.messages)
+                }
+            },
+        }
+    )
 
     // Join room (conversation) on socket connection
     useEffect(() => {
@@ -117,7 +112,7 @@ export const useChat = (
 
         const handleMessage = (msg: string) => {
             // Create a valid Message object
-            const newMessage: MessageType = {
+            const newMessage: Message = {
                 id: '',
                 content: msg,
                 createdAt: new Date().toISOString(),
@@ -143,7 +138,7 @@ export const useChat = (
             )
 
             // Map socket message to valid Message type
-            const newMessage: MessageType = {
+            const newMessage: Message = {
                 id: '',
                 content: msg.message,
                 createdAt: new Date().toISOString(),
@@ -161,6 +156,9 @@ export const useChat = (
 
             setMessages((prev) => [...prev, newMessage])
             setMessage('')
+
+            // Refresh message history to ensure consistency
+            refreshMessages()
         }
 
         socket.on('chat:message', handleMessage)
@@ -170,68 +168,20 @@ export const useChat = (
             socket.off('chat:message', handleMessage)
             socket.off('chat:private_message', handlePrivateMessage)
         }
-    }, [socket, selectedUser, user, conversationId])
+    }, [socket, selectedUser, user, conversationId, refreshMessages])
 
-    // Load message history
-    useEffect(() => {
-        console.log('Loading message history...')
-        if (!selectedUser?._id || !user?._id || !conversationId) {
-            console.log('Missing selectedUser or user information!')
-            console.log(
-                'Details:',
-                'selectedUser:',
-                selectedUser,
-                'user:',
-                user
-            )
-            return
-        }
-        setMessages([])
-
-        api.get(`/api/messages/history?conversationId=${conversationId}`, {
-            withCredentials: true,
-        }).then((res) => {
-            console.log('Message history:', res.data.messages)
-            // Ensure messages meet the expected Message type interface
-            setMessages(
-                res.data.messages.map((msg: ApiMessage) => ({
-                    ...msg,
-                    id: msg.id || '',
-                    attachments: msg.attachments || [],
-                    sender: msg.sender || {
-                        _id: '',
-                        username: 'Unknown',
-                        email: '',
-                        avatar: '',
-                        createdAt: '',
-                        updatedAt: '',
-                    },
-                    createdAt: msg.createdAt || new Date().toISOString(),
-                    updatedAt: msg.updatedAt || new Date().toISOString(),
-                }))
-            )
-            setTimeout(() => {
-                scrollToBottom()
-            }, 100)
-        })
-    }, [selectedUser, user, conversationId])
-
-    // Send message functions
     const sendMessage = () => {
-        if (!message.trim() || !socket) return
+        if (!socket || !message.trim()) return
 
-        socket.emit('chat:message', message)
-
-        // Create a valid Message object for the UI
-        const newMessage: MessageType = {
+        const newMessage: Message = {
             id: '',
             content: message,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             attachments: [],
-            sender: {
-                _id: user?._id || '',
-                username: 'You',
+            sender: user || {
+                _id: '',
+                username: 'Anonymous',
                 email: '',
                 avatar: '',
                 createdAt: '',
@@ -239,76 +189,73 @@ export const useChat = (
             },
         }
 
+        socket.emit('chat:message', message)
         setMessages((prev) => [...prev, newMessage])
         setMessage('')
     }
 
     const sendPrivateMessage = async (attachments?: File[]) => {
         if (
-            !selectedUser?._id ||
-            (!message?.trim() && (!attachments || attachments.length === 0)) ||
             !socket ||
-            !user?.username
-        ) {
-            console.log('Missing required information to send message!')
-            console.log(
-                '\nselectedUser:',
-                selectedUser,
-                '\nmessage:',
-                message,
-                '\nattachments:',
-                attachments,
-                '\nuser:',
-                user
-            )
+            (!message.trim() && (!attachments || attachments.length === 0))
+        )
+            return
+        if (!selectedUser?._id || !user?._id || !conversationId) {
+            console.error('Missing user information for private message')
             return
         }
 
-        console.log(
-            `${user.username} gửi tin nhắn đến ${
-                selectedUser?.username
-            }: ${message}, ${
-                attachments
-                    ? attachments.map((file) => file.name).join(', ')
-                    : 'No attachments'
-            }`
-        )
-        socket.emit('chat:private_message', {
-            conversationId,
-            receiver: selectedUser,
-            message,
-            attachments:
-                attachments && attachments.length > 0 ? attachments : null,
-        })
-
         try {
-            console.log(selectedUser._id)
-            console.log(message)
-
-            // Create FormData for handling both text and file uploads
-            const formData = new FormData()
-            formData.append('selectedUserId', selectedUser._id)
-            formData.append('content', message)
-
-            // Add attachments if they exist
+            // Prepare form data if there are attachments
             if (attachments && attachments.length > 0) {
+                const formData = new FormData()
+                formData.append('text', message)
+                formData.append('to', selectedUser._id)
+                formData.append('conversationId', conversationId)
+
                 attachments.forEach((file) => {
                     formData.append('attachments', file)
                 })
+
+                // Send message with attachments via API
+                await api.post('/api/messages/send', formData, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                })
+            } else {
+                // Send simple text message via socket
+                socket.emit('chat:private_message', {
+                    to: selectedUser._id,
+                    message,
+                    conversationId,
+                })
             }
 
-            for (const [key, value] of formData.entries()) {
-                console.log(`${key}: ${value}`)
+            // Add message to UI
+            const newMessage: Message = {
+                id: '',
+                content: message,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                attachments: [],
+                sender: user || {
+                    _id: '',
+                    username: 'Anonymous',
+                    email: '',
+                    avatar: '',
+                    createdAt: '',
+                    updatedAt: '',
+                },
             }
 
-            const response = await api.post('/api/messages/send', formData, {
-                withCredentials: true,
-            })
-
-            console.log('Message sent successfully:', response.data)
+            setMessages((prev) => [...prev, newMessage])
             setMessage('')
+
+            // Refresh message history
+            refreshMessages()
         } catch (error) {
-            console.error('Error sending message:', error)
+            console.error('Error sending private message:', error)
         }
     }
 
@@ -324,5 +271,6 @@ export const useChat = (
         scrollToBottom,
         hasNewMessage,
         conversationId,
+        refreshMessages,
     }
 }
