@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
-import { debounce } from 'lodash'
+import debounce from 'lodash/debounce'
 
 interface UseMessageInputProps {
     message: string
@@ -25,8 +25,12 @@ export function useMessageInput({
     const fileInputRef = useRef<HTMLInputElement>(null)
     const typingTimerRef = useRef<NodeJS.Timeout | null>(null)
 
-    const debouncedSendTyping = useCallback(
-        debounce(() => {
+    // Tạo debounce function ở ngoài useCallback để tránh lỗi dependencies
+    const debouncedSendTypingRef = useRef<Function | undefined>(undefined)
+
+    // Khởi tạo debounced function trong useEffect để đảm bảo dependencies được cập nhật
+    useEffect(() => {
+        debouncedSendTypingRef.current = debounce(() => {
             sendTyping()
 
             if (typingTimerRef.current) {
@@ -37,16 +41,30 @@ export function useMessageInput({
                 sendStopTyping()
                 typingTimerRef.current = null
             }, 2000)
-        }, 300),
-        [sendTyping]
-    )
+        }, 300)
+
+        // Cleanup
+        return () => {
+            if (
+                typeof debouncedSendTypingRef.current === 'function' &&
+                'cancel' in debouncedSendTypingRef.current
+            ) {
+                ;(debouncedSendTypingRef.current as any).cancel()
+            }
+            if (typingTimerRef.current) {
+                clearTimeout(typingTimerRef.current)
+            }
+        }
+    }, [sendTyping, sendStopTyping])
 
     const handleInputChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
             setMessage(e.target.value)
-            debouncedSendTyping()
+            if (debouncedSendTypingRef.current) {
+                ;(debouncedSendTypingRef.current as Function)()
+            }
         },
-        [setMessage, sendTyping]
+        [setMessage]
     )
 
     const handleSendMessage = useCallback(() => {
@@ -79,15 +97,6 @@ export function useMessageInput({
         }
     }, [message, sendSeen])
 
-    useEffect(() => {
-        return () => {
-            debouncedSendTyping.cancel()
-            if (typingTimerRef.current) {
-                clearTimeout(typingTimerRef.current)
-            }
-        }
-    }, [debouncedSendTyping])
-
     const insertEmoji = useCallback(
         (emoji: string) => {
             setMessage((prev) => prev + emoji)
@@ -102,12 +111,15 @@ export function useMessageInput({
                 setAttachments((prev) => [...prev, ...newFiles])
             }
         },
-        []
+        [setAttachments]
     )
 
-    const removeAttachment = useCallback((index: number) => {
-        setAttachments((prev) => prev.filter((_, i) => i !== index))
-    }, [])
+    const removeAttachment = useCallback(
+        (index: number) => {
+            setAttachments((prev) => prev.filter((_, i) => i !== index))
+        },
+        [setAttachments]
+    )
 
     const triggerFileInput = useCallback(() => {
         if (fileInputRef.current) {

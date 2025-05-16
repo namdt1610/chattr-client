@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Smile, Paperclip, Image, Film } from 'lucide-react'
+import { Smile, Paperclip, Image as ImageIcon, Film } from 'lucide-react'
 
 interface ActionButtonsProps {
     toggleEmojiPicker: () => void
@@ -18,6 +18,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
                 whileTap={{ scale: 0.9 }}
                 className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-indigo-500 transition-colors"
                 onClick={toggleEmojiPicker}
+                aria-label="Open emoji picker"
             >
                 <Smile size={20} />
             </motion.button>
@@ -27,6 +28,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
                 whileTap={{ scale: 0.9 }}
                 className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-indigo-500 transition-colors"
                 onClick={triggerFileInput}
+                aria-label="Attach file"
             >
                 <Paperclip size={20} />
             </motion.button>
@@ -36,8 +38,9 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
                 whileTap={{ scale: 0.9 }}
                 className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-indigo-500 transition-colors"
                 onClick={triggerFileInput}
+                aria-label="Attach image"
             >
-                <Image size={20} />
+                <ImageIcon size={20} />
             </motion.button>
 
             <motion.button
@@ -45,6 +48,7 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
                 whileTap={{ scale: 0.9 }}
                 className="p-2 rounded-full text-gray-500 hover:bg-gray-100 hover:text-indigo-500 transition-colors"
                 onClick={() => alert('GIF picker would open here')}
+                aria-label="Attach GIF"
             >
                 <Film size={20} />
             </motion.button>

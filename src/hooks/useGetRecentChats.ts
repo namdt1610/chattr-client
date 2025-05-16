@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import api from '@/services/api'
+'use client'
+import { useAPI } from './useSWRHook'
 import { Chat } from '@/types/chat'
 
 // Define the API chat structure
@@ -47,37 +47,21 @@ const mapToChat = (apiChat: ApiChat): Chat => ({
 })
 
 export const useRecentChats = (userId: string) => {
-    const [chats, setChats] = useState<Chat[]>([])
-    const [loading, setLoading] = useState<boolean>(false)
-    const [error, setError] = useState<string | null>(null)
-
-    useEffect(() => {
-        const fetchChats = async () => {
-            setChats([])
-            setLoading(true)
-            try {
-                const response = await api.get(
-                    `${process.env.NEXT_PUBLIC_BASE_API_URL}/messages/recent-chats/${userId}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${localStorage.getItem(
-                                'accessToken'
-                            )}`,
-                        },
-                    }
-                )
-                // Map API response to match our Chat type
-                setChats(response.data.map(mapToChat))
-            } catch (error: unknown) {
-                setError('Error fetching chats')
-                console.error('Failed to fetch recent chats:', error)
-            } finally {
-                setLoading(false)
-            }
+    const { data, error, isLoading, mutate } = useAPI<ApiChat[]>(
+        userId ? `/messages/recent-chats/${userId}` : null,
+        {
+            revalidateOnFocus: true,
+            dedupingInterval: 10000, // 10 seconds
         }
+    )
 
-        fetchChats()
-    }, [userId]) // Run again when userId changes
+    // Transform the data
+    const chats = data ? data.map(mapToChat) : []
 
-    return { chats, loading, error }
+    return {
+        chats,
+        loading: isLoading,
+        error: error?.message || null,
+        mutate, // Expose mutate function to manually revalidate
+    }
 }

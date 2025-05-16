@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import api from '@/services/api'
 import { Socket } from 'socket.io-client'
 import { User } from '@/types/user'
+import { useAPI } from './useSWRHook'
 
 // Return placeholder values for required fields not provided by the API
 const mapToUser = (apiUser: {
@@ -17,34 +18,41 @@ const mapToUser = (apiUser: {
     updatedAt: '', // Placeholder
 })
 
+interface UserData {
+    user: {
+        _id: string
+        username: string | null
+    }
+}
+
 export const useUsers = (socket: Socket | null) => {
     const [isSessionExpired, setIsSessionExpired] = useState(false)
     const [searchUser, setSearchUser] = useState('')
     const [userList, setUserList] = useState<User[]>([])
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
-    const [user, setUser] = useState<User | null>(null)
     const [isLoggedIn, setIsLoggedIn] = useState(false)
 
-    // Load current user
-    useEffect(() => {
-        try {
-            api.get('/api/auth/me', {
-                withCredentials: true,
-            }).then((res) => {
-                if (res.status == 401) {
+    // Using SWR to fetch current user data
+    const { data: userData, mutate: refreshUser } = useAPI<UserData>(
+        '/api/auth/me',
+        {
+            onSuccess: (data: UserData) => {
+                setIsSessionExpired(false)
+                setIsLoggedIn(!!data?.user)
+            },
+            onError: () => {
+                setIsLoggedIn(false)
+                setIsSessionExpired(true)
+                // Redirect to login if unauthenticated
+                if (typeof window !== 'undefined') {
                     window.location.href = '/login'
                 }
-                console.log('Current user:', res.data.user)
-                setUser(res.data.user ? mapToUser(res.data.user) : null)
-                setIsSessionExpired(false)
-                setIsLoggedIn(true)
-            })
-        } catch (error) {
-            setIsLoggedIn(false)
-            setIsSessionExpired(true)
-            console.error('Error fetching user data:', error)
+            },
         }
-    }, [])
+    )
+
+    // Map the user data from SWR response
+    const user = userData?.user ? mapToUser(userData.user) : null
 
     // Socket user list events
     useEffect(() => {
@@ -90,5 +98,6 @@ export const useUsers = (socket: Socket | null) => {
         handleSearch,
         isSessionExpired,
         setIsSessionExpired,
+        refreshUser, // Expose function to manually refresh user data
     }
 }

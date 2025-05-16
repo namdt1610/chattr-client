@@ -10,6 +10,7 @@ import { useChatStatus } from '@/hooks/useChatStatus'
 import { useRecentChats } from '@/hooks/useGetRecentChats'
 import ExpiredSessionModal from '@/components/ExpiredSessionModal'
 import Header from '@/components/chat/Header'
+import Image from 'next/image'
 
 const Chat = () => {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -148,13 +149,15 @@ const Chat = () => {
                                             }`}
                                         >
                                             <div className="relative flex-shrink-0">
-                                                <img
+                                                <Image
                                                     src={
                                                         chat.partner.avatar ||
                                                         'https://via.placeholder.com/50'
                                                     }
                                                     alt={chat.partner.username}
-                                                    className="w-10 h-10 rounded-full object-cover"
+                                                    width={40}
+                                                    height={40}
+                                                    className="rounded-full object-cover"
                                                 />
                                                 {/* Online indicator */}
                                                 <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></div>

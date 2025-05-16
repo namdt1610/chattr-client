@@ -1,5 +1,6 @@
 import React from 'react'
 import { formatTimestamp } from '@/utils/formatDate'
+import Image from 'next/image'
 
 import { User } from '@/types/user'
 import { Chat } from '@/types/chat'
@@ -35,14 +36,15 @@ const RecentChats: React.FC<RecentChatsProps> = ({
                                     : 'hover:bg-zinc-100'
                             }`}
                         >
-                            <div className="relative flex-shrink-0">
-                                <img
+                            <div className="relative flex-shrink-0 w-10 h-10">
+                                <Image
                                     src={
                                         chat.partner.avatar ||
                                         'https://via.placeholder.com/50'
                                     }
                                     alt={chat.partner.username}
-                                    className="w-10 h-10 rounded-full object-cover"
+                                    className="rounded-full object-cover"
+                                    fill
                                 />
                                 {/* Online indicator */}
                                 <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></div>
