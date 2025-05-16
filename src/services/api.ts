@@ -28,12 +28,6 @@ let isRefreshing = false
 let failedQueue: QueueItem[] = []
 let tokenExpirationTime: number | null = null // Lưu thời gian hết hạn của token
 
-// Kiểm tra token có hợp lệ không (chưa hết hạn)
-const isTokenValid = (): boolean => {
-    const expirationTime = tokenExpirationTime
-    return !!expirationTime && Date.now() < expirationTime
-}
-
 // Xử lý hàng đợi các request bị lỗi 401
 const processQueue = (
     error: unknown | null,
@@ -62,6 +56,13 @@ api.interceptors.request.use(
         if (!isRefreshRequest) {
             const token = localStorage.getItem('accessToken')
             if (token) {
+                // Kiểm tra token đã hết hạn chưa (nếu biết thời gian hết hạn)
+                if (tokenExpirationTime && Date.now() > tokenExpirationTime) {
+                    console.log(
+                        'Token đã hết hạn, nhưng vẫn gửi request - sẽ được tự động refresh nếu cần'
+                    )
+                }
+
                 config.headers.Authorization = `Bearer ${token}`
             }
         }
