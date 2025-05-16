@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 
 interface ExpiredSessionModalProps {
     isOpen: boolean
@@ -14,14 +14,14 @@ const ExpiredSessionModal: React.FC<ExpiredSessionModalProps> = ({
     const router = useRouter()
     // Local state to handle the animation
     const [isVisible, setIsVisible] = useState(false)
-    
+
     // Handle the animation state based on the isOpen prop
     useEffect(() => {
         if (isOpen) {
             setIsVisible(true)
         }
     }, [isOpen])
-    
+
     // Actual close handler that triggers the animation first
     const handleClose = () => {
         setIsVisible(false)
@@ -55,34 +55,34 @@ const ExpiredSessionModal: React.FC<ExpiredSessionModalProps> = ({
 
             {/* Modal with animation */}
             <div className="flex min-h-screen items-center justify-center p-4">
-                <motion.div 
+                <motion.div
                     className="relative bg-white w-full max-w-md rounded-lg shadow-xl"
                     initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                    animate={{ 
-                        opacity: isVisible ? 1 : 0, 
+                    animate={{
+                        opacity: isVisible ? 1 : 0,
                         y: isVisible ? 0 : 20,
-                        scale: isVisible ? 1 : 0.95 
+                        scale: isVisible ? 1 : 0.95,
                     }}
-                    transition={{ 
-                        type: "spring", 
-                        damping: 25, 
-                        stiffness: 300 
+                    transition={{
+                        type: 'spring',
+                        damping: 25,
+                        stiffness: 300,
                     }}
                 >
                     {/* Color accent top bar */}
                     <div className="h-1.5 bg-amber-500 rounded-t-lg"></div>
-                    
+
                     {/* Modal content */}
                     <div className="p-6">
                         <div className="flex items-center justify-center mb-5">
-                            <motion.div 
+                            <motion.div
                                 className="h-12 w-12 rounded-full bg-amber-100 flex items-center justify-center"
                                 initial={{ scale: 0.8 }}
                                 animate={{ scale: 1 }}
                                 transition={{
-                                    type: "spring",
+                                    type: 'spring',
                                     stiffness: 300,
-                                    damping: 15
+                                    damping: 15,
                                 }}
                             >
                                 <svg
@@ -117,7 +117,7 @@ const ExpiredSessionModal: React.FC<ExpiredSessionModalProps> = ({
                             </p>
                         </motion.div>
 
-                        <motion.div 
+                        <motion.div
                             className="flex flex-col gap-3 sm:flex-row sm:justify-center"
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -128,7 +128,11 @@ const ExpiredSessionModal: React.FC<ExpiredSessionModalProps> = ({
                                 className="w-full sm:w-auto px-6 py-2 rounded-md bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                                 whileHover={{ scale: 1.03 }}
                                 whileTap={{ scale: 0.97 }}
-                                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                                transition={{
+                                    type: 'spring',
+                                    stiffness: 400,
+                                    damping: 10,
+                                }}
                             >
                                 Log In
                             </motion.button>
@@ -137,7 +141,11 @@ const ExpiredSessionModal: React.FC<ExpiredSessionModalProps> = ({
                                 className="w-full sm:w-auto px-6 py-2 rounded-md border border-zinc-300 text-zinc-700 hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-500 focus:ring-offset-2"
                                 whileHover={{ scale: 1.03 }}
                                 whileTap={{ scale: 0.97 }}
-                                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                                transition={{
+                                    type: 'spring',
+                                    stiffness: 400,
+                                    damping: 10,
+                                }}
                             >
                                 Continue as Guest
                             </motion.button>

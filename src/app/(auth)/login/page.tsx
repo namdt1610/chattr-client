@@ -204,7 +204,7 @@ const LoginPage = () => {
                             variants={itemVariants}
                         >
                             <p className="text-gray-600">
-                                Don't have an account?{' '}
+                                Don&apos;t have an account?{' '}
                                 <motion.span
                                     whileHover={{
                                         color: '#4338ca',

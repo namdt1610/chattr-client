@@ -1,10 +1,13 @@
 import React from 'react'
 import { formatTimestamp } from '@/utils/formatDate'
 
+import { User } from '@/types/user'
+import { Chat } from '@/types/chat'
+
 interface RecentChatsProps {
-    chats: any[]
-    selectedUser: any
-    setSelectedUser: (user: any) => void
+    chats: Chat[]
+    selectedUser: User | null
+    setSelectedUser: (user: User | null) => void
 }
 
 const RecentChats: React.FC<RecentChatsProps> = ({
@@ -24,7 +27,7 @@ const RecentChats: React.FC<RecentChatsProps> = ({
                     <li key={chat.conversationId}>
                         <button
                             onClick={() => {
-                                setSelectedUser(chat.partner) // Sau đó mới set người dùng mới
+                                setSelectedUser(chat.partner)
                             }}
                             className={`!bg-white w-full py-2 px-2 rounded-md flex items-center transition-colors ${
                                 selectedUser?.username === chat.partner.username
@@ -58,11 +61,11 @@ const RecentChats: React.FC<RecentChatsProps> = ({
                                         {chat.partner.username}
                                     </span>
                                     <span className="text-xs text-zinc-400 ml-2 flex-shrink-0">
-                                        {formatTimestamp(chat.createdAt)}
+                                        {formatTimestamp(chat.lastMessageDate)}
                                     </span>
                                 </div>
                                 <p className="text-sm text-zinc-500 truncate mt-0.5">
-                                    {chat.lastMessage}
+                                    {chat.lastMessage.content}
                                 </p>
                             </div>
                         </button>

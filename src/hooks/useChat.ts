@@ -1,29 +1,53 @@
 import { useState, useEffect, useRef, useMemo } from 'react'
-import axios from 'axios'
+import api from '../services/api'
 import { Socket } from 'socket.io-client'
+import { Message as MessageType } from '@/types/message'
+import { User as UserType } from '@/types/user'
 
-type Message = {
-    sender: { username: string }
-    content: string
+// Local types for MessageResponse from socket
+interface MessageResponse {
+    from: string
+    message: string
+    conversationId: string
+    attachments?: Array<{
+        id: string
+        filename: string
+        fileType: string
+        fileSize: number
+        fileUrl: string
+    }>
 }
 
-type User = {
-    _id: string
-    username?: string | null
-} | null
-
-type SelectedUser = {
-    _id: string
-    username?: string | null
-} | null
+// Define a type for the API message response
+interface ApiMessage {
+    id?: string
+    content: string
+    createdAt?: string
+    updatedAt?: string
+    attachments?: Array<{
+        id: string
+        filename: string
+        fileType: string
+        fileSize: number
+        fileUrl: string
+    }>
+    sender?: {
+        _id: string
+        username: string
+        email?: string
+        avatar?: string
+        createdAt?: string
+        updatedAt?: string
+    }
+}
 
 export const useChat = (
     socket: Socket | null,
-    user: User,
-    selectedUser: SelectedUser
+    user: UserType | null,
+    selectedUser: UserType | null
 ) => {
     const [message, setMessage] = useState('')
-    const [messages, setMessages] = useState<Message[]>([])
+    const [messages, setMessages] = useState<MessageType[]>([])
     const [isAtBottom, setIsAtBottom] = useState(true)
     const [hasNewMessage, setHasNewMessage] = useState(false)
     const chatContainerRef = useRef<HTMLDivElement>(null)
@@ -34,7 +58,7 @@ export const useChat = (
 
     // Join room (conversation) on socket connection
     useEffect(() => {
-        if (!socket || !user?._id || !selectedUser?._id) {
+        if (!socket || !user?._id || !selectedUser?._id || !conversationId) {
             console.log('Socket or user information is missing!')
             console.log('user:', user, 'selectedUser:', selectedUser)
             return
@@ -44,18 +68,18 @@ export const useChat = (
         console.log(`🚪 User ${user._id} joined room: ${conversationId}`)
 
         return () => {
-            socket.emit('chat:leave_room', conversationId) // Xử lý rời room khi component unmount
+            socket.emit('chat:leave_room', conversationId) // Leave room when component unmounts
         }
-    }, [socket, user, selectedUser])
+    }, [socket, user, selectedUser, conversationId])
 
     useEffect(() => {
         if (!selectedUser) {
             console.log('No user selected!')
-            return // Không thực hiện gì nếu không có selectedUser
+            return // Do nothing if no selectedUser
         }
 
         console.log('Selected user:', selectedUser)
-        // Thực hiện các thao tác khi có selectedUser
+        // Perform operations when there is a selectedUser
     }, [selectedUser])
 
     // Handle scroll behavior
@@ -82,7 +106,7 @@ export const useChat = (
         if (isAtBottom) {
             scrollToBottom()
         }
-    }, [messages])
+    }, [messages, isAtBottom])
 
     // Socket message listeners
     useEffect(() => {
@@ -91,26 +115,51 @@ export const useChat = (
         socket.off('chat:message')
         socket.off('chat:private_message')
 
-        const handleMessage = (msg: any) => {
-            setMessages((prev) => [
-                ...prev,
-                { sender: { username: 'System' }, content: msg },
-            ])
+        const handleMessage = (msg: string) => {
+            // Create a valid Message object
+            const newMessage: MessageType = {
+                id: '',
+                content: msg,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                attachments: [],
+                sender: {
+                    _id: 'system',
+                    username: 'System',
+                    email: '',
+                    avatar: '',
+                    createdAt: '',
+                    updatedAt: '',
+                },
+            }
+
+            setMessages((prev) => [...prev, newMessage])
         }
 
-        const handlePrivateMessage = (msg: any) => {
+        const handlePrivateMessage = (msg: MessageResponse) => {
             if (msg.conversationId !== conversationId) return
             console.log(
                 `${selectedUser?.username} nhận tin nhắn từ ${msg.from}: ${msg.message}, ${msg.attachments}`
             )
-            setMessages((prev) => [
-                ...prev,
-                {
-                    sender: { username: msg.from },
-                    content: msg.message,
-                    attachments: msg.attachments,
+
+            // Map socket message to valid Message type
+            const newMessage: MessageType = {
+                id: '',
+                content: msg.message,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                attachments: msg.attachments || [],
+                sender: {
+                    _id: '',
+                    username: msg.from,
+                    email: '',
+                    avatar: '',
+                    createdAt: '',
+                    updatedAt: '',
                 },
-            ])
+            }
+
+            setMessages((prev) => [...prev, newMessage])
             setMessage('')
         }
 
@@ -121,7 +170,7 @@ export const useChat = (
             socket.off('chat:message', handleMessage)
             socket.off('chat:private_message', handlePrivateMessage)
         }
-    }, [socket, selectedUser?._id, user?.username, conversationId])
+    }, [socket, selectedUser, user, conversationId])
 
     // Load message history
     useEffect(() => {
@@ -139,27 +188,42 @@ export const useChat = (
         }
         setMessages([])
 
-        axios
-            .get(
-                `http://localhost:5050/api/messages/history?conversationId=${conversationId}`,
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${localStorage.getItem(
-                            'accessToken'
-                        )}`,
+        api.get(
+            `http://localhost:5050/api/messages/history?conversationId=${conversationId}`,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${localStorage.getItem(
+                        'accessToken'
+                    )}`,
+                },
+                withCredentials: true,
+            }
+        ).then((res) => {
+            console.log('Message history:', res.data.messages)
+            // Ensure messages meet the expected Message type interface
+            setMessages(
+                res.data.messages.map((msg: ApiMessage) => ({
+                    ...msg,
+                    id: msg.id || '',
+                    attachments: msg.attachments || [],
+                    sender: msg.sender || {
+                        _id: '',
+                        username: 'Unknown',
+                        email: '',
+                        avatar: '',
+                        createdAt: '',
+                        updatedAt: '',
                     },
-                    withCredentials: true,
-                }
+                    createdAt: msg.createdAt || new Date().toISOString(),
+                    updatedAt: msg.updatedAt || new Date().toISOString(),
+                }))
             )
-            .then((res) => {
-                console.log('Message history:', res.data.messages)
-                setMessages(res.data.messages)
-                setTimeout(() => {
-                    scrollToBottom()
-                }, 100)
-            })
-    }, [selectedUser?._id])
+            setTimeout(() => {
+                scrollToBottom()
+            }, 100)
+        })
+    }, [selectedUser, user, conversationId])
 
     // Send message functions
     const sendMessage = () => {
@@ -167,10 +231,24 @@ export const useChat = (
 
         socket.emit('chat:message', message)
 
-        setMessages((prev) => [
-            ...prev,
-            { sender: { username: 'You' }, content: message },
-        ])
+        // Create a valid Message object for the UI
+        const newMessage: MessageType = {
+            id: '',
+            content: message,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            attachments: [],
+            sender: {
+                _id: user?._id || '',
+                username: 'You',
+                email: '',
+                avatar: '',
+                createdAt: '',
+                updatedAt: '',
+            },
+        }
+
+        setMessages((prev) => [...prev, newMessage])
         setMessage('')
     }
 
@@ -223,16 +301,16 @@ export const useChat = (
 
             // Add attachments if they exist
             if (attachments && attachments.length > 0) {
-                attachments.forEach((file, index) => {
+                attachments.forEach((file) => {
                     formData.append('attachments', file)
                 })
             }
 
-            for (let [key, value] of formData.entries()) {
+            for (const [key, value] of formData.entries()) {
                 console.log(`${key}: ${value}`)
             }
 
-            const response = await axios.post(
+            const response = await api.post(
                 'http://localhost:5050/api/messages/send',
                 formData,
                 {

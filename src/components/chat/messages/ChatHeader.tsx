@@ -1,5 +1,7 @@
+import { User } from '@/types/user'
+
 interface ChatHeaderProps {
-    selectedUser: any
+    selectedUser: User | null
     onClose: () => void
 }
 

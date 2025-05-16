@@ -1,9 +1,14 @@
 import React from 'react'
+import Image from 'next/image'
+
+import { Message } from '@/types/message'
+import { User } from '@/types/user'
+import { Attachment } from '@/types/attachment'
 
 interface MessageListProps {
-    messages: any[]
-    selectedUser: any
-    user: any
+    messages: Message[]
+    selectedUser: User | null
+    user: User | null
     chatContainerRef: React.RefObject<HTMLDivElement>
     handleScroll: () => void
     hasNewMessage: boolean
@@ -45,22 +50,24 @@ const MessageList: React.FC<MessageListProps> = ({
                         {msg.attachments && msg.attachments.length > 0 ? (
                             <div className="message-attachments gap-2 flex flex-col">
                                 {msg.attachments.map(
-                                    (fileUrl: string, index: number) => {
+                                    (attachment: Attachment, index: number) => {
                                         const isImage =
                                             /\.(jpg|jpeg|png|gif|webp)$/i.test(
-                                                fileUrl
+                                                attachment.fileUrl
                                             )
                                         return isImage ? (
-                                            <img
-                                                src={`http://localhost:5050/${fileUrl}`}
+                                            <Image
+                                                src={`http://localhost:5050/${attachment.fileUrl}`}
                                                 crossOrigin="anonymous"
                                                 alt={`attachment-${index}`}
                                                 key={index}
                                                 className="rounded-xl max-w-full h-auto shadow-md"
+                                                width={300}
+                                                height={200}
                                             />
                                         ) : (
                                             <a
-                                                href={`http://localhost:5050/${fileUrl}`}
+                                                href={`http://localhost:5050/${attachment.fileUrl}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 key={index}

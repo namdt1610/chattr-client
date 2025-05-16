@@ -8,11 +8,11 @@ import { useChat } from '@/hooks/useChat'
 import { useUsers } from '@/hooks/useUsers'
 import { useChatStatus } from '@/hooks/useChatStatus'
 import { useRecentChats } from '@/hooks/useGetRecentChats'
-import ConsoleLog from '@/components/ConsoleLog'
 import ExpiredSessionModal from '@/components/ExpiredSessionModal'
 import Header from '@/components/chat/Header'
 
 const Chat = () => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const logs = useConsoleLogs()
     const { handleLogout } = useLogout()
     const {
@@ -175,12 +175,12 @@ const Chat = () => {
                                                     </span>
                                                     <span className="text-xs text-zinc-400 ml-2 flex-shrink-0">
                                                         {formatTimestamp(
-                                                            chat.createdAt
+                                                            chat.lastMessageDate
                                                         )}
                                                     </span>
                                                 </div>
                                                 <p className="text-sm text-white truncate mt-0.5">
-                                                    {chat.lastMessage}
+                                                    {chat.lastMessage.content}
                                                 </p>
                                             </div>
                                         </button>
@@ -284,16 +284,19 @@ const Chat = () => {
                                     className="flex-1 px-4 py-3 bg-zinc-100 rounded-l-md focus:outline-none"
                                     value={message}
                                     onChange={(e) => {
-                                        setMessage(e.target.value), sendTyping()
+                                        setMessage(e.target.value)
+                                        sendTyping()
                                     }}
                                     placeholder="Type a message..."
                                     disabled={!selectedUser && !isLoggedIn}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' && !e.shiftKey) {
                                             e.preventDefault()
-                                            selectedUser
-                                                ? sendPrivateMessage()
-                                                : sendMessage()
+                                            if (selectedUser) {
+                                                sendPrivateMessage()
+                                            } else {
+                                                sendMessage()
+                                            }
                                         }
                                     }}
                                     onFocus={sendSeen}
@@ -304,11 +307,13 @@ const Chat = () => {
                                             ? 'bg-blue-500 hover:bg-blue-600 text-white'
                                             : 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
                                     }`}
-                                    onClick={
-                                        selectedUser
-                                            ? sendPrivateMessage
-                                            : sendMessage
-                                    }
+                                    onClick={() => {
+                                        if (selectedUser) {
+                                            sendPrivateMessage()
+                                        } else {
+                                            sendMessage()
+                                        }
+                                    }}
                                     disabled={!selectedUser && !isLoggedIn}
                                 >
                                     Send

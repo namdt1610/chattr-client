@@ -1,7 +1,7 @@
 import React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Paperclip, X } from 'lucide-react'
-
+import Image from 'next/image'
 interface AttachmentPreviewProps {
   attachments: File[]
   removeAttachment: (index: number) => void
@@ -27,9 +27,9 @@ const AttachmentPreview: React.FC<AttachmentPreviewProps> = ({
           <div key={index} className="relative group">
             <div className="w-16 h-16 rounded-md bg-gray-100 flex items-center justify-center overflow-hidden">
               {file.type.startsWith('image/') ? (
-                <img 
-                  src={URL.createObjectURL(file)} 
-                  alt={file.name} 
+                <Image
+                  src={URL.createObjectURL(file)}
+                  alt={file.name}
                   className="object-cover w-full h-full"
                 />
               ) : (

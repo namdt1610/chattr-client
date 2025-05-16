@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from 'react'
 import io from 'socket.io-client'
 import axios from 'axios'
-import { useRouter } from 'next/navigation'
 import { useConsoleLogs } from '@/hooks/useLogs'
 import { useLogout } from '@/hooks/useLogout'
 import ConsoleLog from '@/components/ConsoleLog'
@@ -28,12 +27,10 @@ const Chat = () => {
             content: string
         }[]
     >([])
-    const router = useRouter()
     // console.log(messages)
 
     const [searchUser, setSearchUser] = useState('')
     const [userList, setUserList] = useState<{ username: string }[]>([])
-    const [onlineUsers, setOnlineUsers] = useState<string[]>([])
     const [selectedUser, setSelectedUser] = useState<string | null>(null)
     const [user, setUser] = useState<{
         userId: string
@@ -51,12 +48,12 @@ const Chat = () => {
         const isBottom = scrollTop + clientHeight >= scrollHeight - 10
 
         setIsAtBottom(isBottom)
-        if (isBottom) setHasNewMessage(false) // Nếu đang ở cuối thì không cần thông báo tin nhắn mới
+        if (isBottom) setHasNewMessage(false) // Reset new message notification when at bottom
     }
 
     useEffect(() => {
         if (!isAtBottom) setHasNewMessage(true)
-    }, [messages])
+    }, [isAtBottom, messages])
 
     const scrollToBottom = () => {
         chatContainerRef.current?.scrollTo({
@@ -77,7 +74,8 @@ const Chat = () => {
                     withCredentials: true,
                 })
                 .then((res) => {
-                    setUser(res.data.user), setIsLoggedIn(true)
+                    setUser(res.data.user)
+                    setIsLoggedIn(true)
                 })
         } catch (error) {
             setIsLoggedIn(false)
@@ -93,11 +91,6 @@ const Chat = () => {
 
         socket.on('error', (error) => {
             console.error('Socket error:', error)
-        })
-
-        socket.on('online-users', (userId, username) => {
-            setOnlineUsers((prev) => [...prev, userId])
-            console.log('Người dùng online:', userId)
         })
 
         socket.on('message', (msg) => {
@@ -188,7 +181,7 @@ const Chat = () => {
             .then((res) => {
                 setMessages(res.data.messages)
             })
-    }, [selectedUser, user?.username, messages])
+    }, [selectedUser, user?.username])
 
     const handleSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const query = e.target.value.trim()
@@ -245,8 +238,8 @@ const Chat = () => {
                 onChange={handleSearch}
             />
             <ul className="mt-2">
-                {userList.map((u, idx) => (
-                    <li key={idx} className="p-1 border-b">
+                {userList.map((u) => (
+                    <li key={u.username} className="p-1 border-b">
                         <button
                             onClick={() => setSelectedUser(u.username)}
                             className="text-blue-500"
@@ -276,6 +269,7 @@ const Chat = () => {
             <div
                 ref={chatContainerRef}
                 className="border p-2 h-64 overflow-y-auto mt-4"
+                onScroll={handleScroll}
             >
                 {messages.map((msg, idx) => (
                     <div
@@ -313,15 +307,21 @@ const Chat = () => {
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Nhập tin nhắn..."
                 onKeyDown={(e) => {
-                    if (e.key == 'Enter' && !e.shiftKey) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault()
-                        selectedUser ? sendPrivateMessage() : sendMessage()
+                        if (selectedUser) {
+                            sendPrivateMessage()
+                        } else {
+                            sendMessage()
+                        }
                     }
                 }}
             />
             <button
                 className="bg-blue-500 text-white p-2 mt-2 w-full"
-                onClick={selectedUser ? sendPrivateMessage : sendMessage}
+                onClick={() =>
+                    selectedUser ? sendPrivateMessage() : sendMessage()
+                }
             >
                 Gửi
             </button>

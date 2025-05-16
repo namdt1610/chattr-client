@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback, useRef } from 'react'
-import io, { Socket } from 'socket.io-client'
+import { Socket } from 'socket.io-client'
 
 interface UseChatStatusProps {
     socket: Socket | null

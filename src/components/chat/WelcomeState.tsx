@@ -1,6 +1,12 @@
-import { WelcomeStateProps } from '@/types/chat'
 import { motion } from 'framer-motion'
 import { MessageCircle } from 'lucide-react'
+import { User } from '@/types/user'
+
+interface WelcomeStateProps {
+    isLoggedIn: boolean
+    selectedUser: User | null
+    setShowLoginModal: (show: boolean) => void
+}
 
 const WelcomeState = ({
     isLoggedIn,
