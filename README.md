@@ -1,5 +1,3 @@
-Tôi sẽ cập nhật tài liệu README.md để thêm thông tin về tính năng gửi email khi đăng ký thành công. Dưới đây là phần cần bổ sung:
-
 ```markdown
 # Tài liệu hướng dẫn Ứng dụng Chat
 
