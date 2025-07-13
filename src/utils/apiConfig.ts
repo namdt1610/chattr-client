@@ -3,13 +3,17 @@ export const getApiBaseUrl = () => {
     if (typeof window === 'undefined') {
         // Server-side rendering
         return process.env.NODE_ENV === 'production'
-            ? 'https://chatapp-backend-l6tv.onrender.com'
+            ? process.env.NEXT_PUBLIC_API_URL ||
+                  'https://chatapp-backend-l6tv.onrender.com'
             : 'http://localhost:5050'
     }
 
     // Client-side
     if (process.env.NODE_ENV === 'production') {
-        return 'https://chatapp-backend-l6tv.onrender.com'
+        return (
+            process.env.NEXT_PUBLIC_API_URL ||
+            'https://chatapp-backend-l6tv.onrender.com'
+        )
     }
 
     // Development - use proxy
@@ -18,7 +22,8 @@ export const getApiBaseUrl = () => {
 
 export const getSocketUrl = () => {
     return process.env.NODE_ENV === 'production'
-        ? 'https://chatapp-backend-l6tv.onrender.com'
+        ? process.env.NEXT_PUBLIC_SOCKET_URL ||
+              'https://chatapp-backend-l6tv.onrender.com'
         : 'http://localhost:5050'
 }
 

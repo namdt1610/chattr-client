@@ -18,13 +18,13 @@ export const getApiBaseUrl = () => {
     if (typeof window === 'undefined') {
         // Server-side rendering
         return process.env.NODE_ENV === 'production'
-            ? 'https://chatapp-backend-l6tv.onrender.com'
+            ? process.env.NEXT_PUBLIC_API_URL || 'https://chatapp-backend-l6tv.onrender.com'
             : 'http://localhost:5050'
     }
     
     // Client-side
     if (process.env.NODE_ENV === 'production') {
-        return 'https://chatapp-backend-l6tv.onrender.com'
+        return process.env.NEXT_PUBLIC_API_URL || 'https://chatapp-backend-l6tv.onrender.com'
     }
     
     // Development - use proxy
@@ -33,7 +33,7 @@ export const getApiBaseUrl = () => {
 
 export const getSocketUrl = () => {
     return process.env.NODE_ENV === 'production'
-        ? 'https://chatapp-backend-l6tv.onrender.com'
+        ? process.env.NEXT_PUBLIC_SOCKET_URL || 'https://chatapp-backend-l6tv.onrender.com'
         : 'http://localhost:5050'
 }
 
@@ -43,7 +43,30 @@ export const buildApiUrl = (endpoint: string) => {
 }
 ```
 
-### 2. Cập nhật tất cả hooks để sử dụng cấu hình mới
+### 2. Environment Variables
+Tạo file `.env.local` trong thư mục `chattr-client`:
+
+```bash
+# API Configuration
+NEXT_PUBLIC_API_URL=https://chatapp-backend-l6tv.onrender.com
+NEXT_PUBLIC_SOCKET_URL=https://chatapp-backend-l6tv.onrender.com
+
+# SWR Configuration (optional)
+NEXT_PUBLIC_SWR_REFRESH_INTERVAL=0
+NEXT_PUBLIC_SWR_DEDUPE_INTERVAL=2000
+NEXT_PUBLIC_SWR_RETRY_COUNT=3
+```
+
+### 3. Cấu hình Vercel Environment Variables
+Trong Vercel dashboard, thêm các environment variables:
+
+```bash
+NEXT_PUBLIC_API_URL=https://chatapp-backend-l6tv.onrender.com
+NEXT_PUBLIC_SOCKET_URL=https://chatapp-backend-l6tv.onrender.com
+NODE_ENV=production
+```
+
+### 4. Cập nhật tất cả hooks để sử dụng cấu hình mới
 - `useLogin.ts`: Sử dụng `buildApiUrl('/api/auth/login')`
 - `useRegister.ts`: Sử dụng `buildApiUrl('/api/auth/register')`
 - `useLogout.ts`: Sử dụng `buildApiUrl('/api/auth/logout')`
@@ -53,7 +76,7 @@ export const buildApiUrl = (endpoint: string) => {
 - `useSocket.ts`: Sử dụng `getSocketUrl()`
 - `swrConfig.ts`: Sử dụng `buildApiUrl('/api/auth/refresh')`
 
-### 3. Cấu hình CORS ở Backend
+### 5. Cấu hình CORS ở Backend
 Đảm bảo backend có cấu hình CORS đúng:
 
 ```typescript
@@ -84,11 +107,20 @@ const corsOptions = {
 NODE_ENV=production
 ```
 
+### 4. Kiểm tra Environment Variables trong Browser
+Mở DevTools > Console và chạy:
+```javascript
+console.log('API URL:', process.env.NEXT_PUBLIC_API_URL)
+console.log('Socket URL:', process.env.NEXT_PUBLIC_SOCKET_URL)
+console.log('NODE_ENV:', process.env.NODE_ENV)
+```
+
 ## Các bước tiếp theo nếu vẫn có vấn đề
 
 ### 1. Kiểm tra Vercel Environment Variables
 - Đảm bảo `NODE_ENV=production` được set trong Vercel
-- Kiểm tra các environment variables khác
+- Kiểm tra `NEXT_PUBLIC_API_URL` và `NEXT_PUBLIC_SOCKET_URL` được set đúng
+- Đảm bảo các environment variables có prefix `NEXT_PUBLIC_` để accessible ở client-side
 
 ### 2. Test API Endpoints trực tiếp
 - Sử dụng Postman/Insomnia để test API
@@ -108,4 +140,5 @@ Nếu vẫn không hoạt động:
 - Đảm bảo backend URL đúng và accessible
 - CORS phải được cấu hình đúng ở cả client và server
 - Environment variables phải được set đúng trong Vercel
-- Proxy chỉ hoạt động trong development mode 
+- Proxy chỉ hoạt động trong development mode
+- Environment variables với prefix `NEXT_PUBLIC_` sẽ được expose ở client-side 

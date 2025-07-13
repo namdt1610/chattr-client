@@ -41,7 +41,7 @@ export const fetcher = async (url: string) => {
                     window.dispatchEvent(new CustomEvent('session-expired'))
                 }
             }
-        } catch (error) {
+        } catch {
             // If refresh throws an error, notify the app
             if (typeof window !== 'undefined') {
                 window.dispatchEvent(new CustomEvent('session-expired'))
