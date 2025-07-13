@@ -1,6 +1,7 @@
 'use client'
 import { useAPI } from './useSWRHook'
 import { Chat } from '@/types/chat'
+import { buildApiUrl } from '@/utils/apiConfig'
 
 // Define the API chat structure
 interface ApiChat {
@@ -48,7 +49,7 @@ const mapToChat = (apiChat: ApiChat): Chat => ({
 
 export const useRecentChats = (userId: string) => {
     const { data, error, isLoading, mutate } = useAPI<ApiChat[]>(
-        userId ? `/messages/recent-chats/${userId}` : null,
+        userId ? buildApiUrl(`/messages/recent-chats/${userId}`) : null,
         {
             revalidateOnFocus: true,
             dedupingInterval: 10000, // 10 seconds

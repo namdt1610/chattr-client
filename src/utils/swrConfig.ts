@@ -1,4 +1,5 @@
 import { SWRConfiguration } from 'swr'
+import { buildApiUrl } from './apiConfig'
 
 // Global SWR fetcher that handles token refresh
 export const fetcher = async (url: string) => {
@@ -13,10 +14,13 @@ export const fetcher = async (url: string) => {
     if (response.status === 401) {
         try {
             // Try to refresh the token
-            const refreshResponse = await fetch('/api/auth/refresh', {
-                method: 'POST',
-                credentials: 'include',
-            })
+            const refreshResponse = await fetch(
+                buildApiUrl('/api/auth/refresh'),
+                {
+                    method: 'POST',
+                    credentials: 'include',
+                }
+            )
 
             // If refresh was successful, retry the original request
             if (refreshResponse.ok) {

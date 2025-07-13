@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { Socket } from 'socket.io-client'
 import { User } from '@/types/user'
 import { useAPI } from './useSWRHook'
+import { buildApiUrl } from '@/utils/apiConfig'
 
 // Return placeholder values for required fields not provided by the API
 const mapToUser = (apiUser: {
@@ -40,7 +41,7 @@ export const useUsers = (socket: Socket | null) => {
 
     // Using SWR to fetch current user data
     const { data: userData, mutate: refreshUser } = useAPI<UserData>(
-        '/api/auth/me',
+        buildApiUrl('/api/auth/me'),
         {
             onSuccess: (data: UserData) => {
                 setIsSessionExpired(false)
@@ -76,7 +77,7 @@ export const useUsers = (socket: Socket | null) => {
     // Hook to search users with useAPI instead of direct API call
     const { data: searchResults, mutate: refreshSearch } =
         useAPI<SearchUsersResponse>(
-            searchUser ? `/api/users/${searchUser}` : null,
+            searchUser ? buildApiUrl(`/api/users/${searchUser}`) : null,
             {
                 revalidateOnFocus: false,
             }

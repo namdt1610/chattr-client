@@ -1,6 +1,7 @@
 'use client'
 import { useRouter } from 'next/navigation'
 import useSWRMutation from 'swr/mutation'
+import { buildApiUrl } from '@/utils/apiConfig'
 
 async function logoutFetcher(url: string) {
     const response = await fetch(url, {
@@ -22,8 +23,8 @@ async function logoutFetcher(url: string) {
 export const useLogout = () => {
     const router = useRouter()
 
-    const { trigger, isMutating } = useSWRMutation(
-        '/api/auth/logout',
+    const { trigger, isMutating: isLoading } = useSWRMutation(
+        buildApiUrl('/api/auth/logout'),
         logoutFetcher,
         {
             onSuccess: () => {
@@ -45,5 +46,5 @@ export const useLogout = () => {
         }
     }
 
-    return { handleLogout, isLoading: isMutating }
+    return { handleLogout, isLoading }
 }

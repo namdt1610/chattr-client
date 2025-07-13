@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import useSWRMutation from 'swr/mutation'
+import { buildApiUrl } from '@/utils/apiConfig'
 
 interface LoginCredentials {
     username: string
@@ -43,7 +44,7 @@ export function useLogin() {
         Error,
         string,
         LoginCredentials
-    >('/api/auth/login', loginFetcher, {
+    >(buildApiUrl('/api/auth/login'), loginFetcher, {
         onSuccess: () => {
             router.push('/beta')
         },

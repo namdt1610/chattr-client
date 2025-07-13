@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import useSWRMutation from 'swr/mutation'
+import { buildApiUrl } from '@/utils/apiConfig'
 
 interface RegisterCredentials {
     username: string
@@ -48,7 +49,7 @@ export function useRegister() {
         Error,
         string,
         RegisterCredentials
-    >('/api/auth/register', registerFetcher, {
+    >(buildApiUrl('/api/auth/register'), registerFetcher, {
         onSuccess: () => {
             console.log('Registration successful!')
             router.push('/login')

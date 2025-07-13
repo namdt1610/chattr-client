@@ -6,6 +6,7 @@ import { User } from '@/types/user'
 import { Attachment } from '@/types/attachment'
 import { useAPI } from './useSWRHook'
 import useSWRMutation from 'swr/mutation'
+import { buildApiUrl } from '@/utils/apiConfig'
 
 // Local types for socket message response
 interface MessageResponse {
@@ -54,7 +55,9 @@ export const useChat = (
     // Sử dụng useAPI để lấy lịch sử tin nhắn
     const { mutate: refreshMessages } = useAPI<MessageHistoryResponse>(
         conversationId
-            ? `/api/messages/history?conversationId=${conversationId}`
+            ? buildApiUrl(
+                  `/api/messages/history?conversationId=${conversationId}`
+              )
             : null,
         {
             revalidateOnFocus: false,
@@ -68,7 +71,7 @@ export const useChat = (
 
     // Sử dụng SWR mutation cho việc gửi tin nhắn có attachment
     const { trigger: sendWithAttachments } = useSWRMutation(
-        '/api/messages/send',
+        buildApiUrl('/api/messages/send'),
         sendMessageFetcher
     )
 
