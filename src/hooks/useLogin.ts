@@ -14,6 +14,8 @@ interface LoginResponse {
         _id: string
         username: string
     }
+    access_token?: string
+    refresh_token?: string
 }
 
 // Hàm fetcher sử dụng fetch API
@@ -37,7 +39,7 @@ async function loginFetcher(url: string, { arg }: { arg: LoginCredentials }) {
 
 export function useLogin() {
     const [error, setError] = useState<string>('')
-    const _router = useRouter()
+    const router = useRouter()
 
     const { trigger, isMutating: isLoading } = useSWRMutation<
         LoginResponse,
@@ -46,6 +48,18 @@ export function useLogin() {
         LoginCredentials
     >(buildApiUrl('/api/auth/login'), loginFetcher, {
         onSuccess: (data) => {
+            console.log('Login response:', data)
+            // Lưu token vào localStorage nếu có
+            if (typeof window !== 'undefined' && data.access_token) {
+                localStorage.setItem('accessToken', data.access_token)
+                if (data.refresh_token) {
+                    localStorage.setItem('refreshToken', data.refresh_token)
+                }
+                console.log('Tokens saved to localStorage')
+            } else {
+                console.log('No tokens in response')
+            }
+
             // Set global state để báo hiệu đã login thành công
             if (typeof window !== 'undefined') {
                 // Dispatch custom event để các component khác có thể lắng nghe
@@ -55,7 +69,10 @@ export function useLogin() {
                     })
                 )
             }
-            // Không redirect nữa, chỉ set global state
+            // Redirect về trang chat sau khi login thành công
+            setTimeout(() => {
+                router.push('/beta')
+            }, 100)
         },
         onError: (err: any) => {
             // Xử lý lỗi từ API

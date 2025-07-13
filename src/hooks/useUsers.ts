@@ -44,16 +44,14 @@ export const useUsers = (socket: Socket | null) => {
         buildApiUrl('/api/auth/me'),
         {
             onSuccess: (data: UserData) => {
+                console.log('useUsers: User data loaded successfully', data)
                 setIsSessionExpired(false)
                 setIsLoggedIn(!!data?.user)
             },
             onError: () => {
                 setIsLoggedIn(false)
                 setIsSessionExpired(true)
-                // Redirect to login if unauthenticated
-                if (typeof window !== 'undefined') {
-                    window.location.href = '/login'
-                }
+                // Không redirect tự động, để component tự xử lý
             },
         }
     )
@@ -64,6 +62,7 @@ export const useUsers = (socket: Socket | null) => {
     // Listen for login/logout events
     useEffect(() => {
         const handleUserLoggedIn = (_event: CustomEvent) => {
+            console.log('useUsers: User logged in event received')
             setIsLoggedIn(true)
             setIsSessionExpired(false)
             // Refresh user data

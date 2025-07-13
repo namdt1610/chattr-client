@@ -225,7 +225,12 @@ export const useChat = (
         )
             return
         if (!selectedUser?._id || !user?._id || !conversationId) {
-            console.error('Missing user information for private message')
+            console.error('Missing user information for private message', {
+                selectedUser: selectedUser?._id,
+                user: user?._id,
+                conversationId,
+                socket: !!socket,
+            })
             return
         }
 

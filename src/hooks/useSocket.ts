@@ -16,6 +16,11 @@ export const useSocket = (currentUser: unknown) => {
                 ? localStorage.getItem('accessToken')
                 : null
 
+        console.log(
+            'useSocket: Token from localStorage:',
+            token ? 'exists' : 'not found'
+        )
+
         // Use localhost in development, Render URL in production
         const socketUrl = getSocketUrl()
 
