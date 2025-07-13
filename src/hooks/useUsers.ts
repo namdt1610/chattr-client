@@ -58,6 +58,7 @@ export const useUsers = (socket: Socket | null) => {
 
     // Map the user data from SWR response
     const user = userData?.user ? mapToUser(userData.user) : null
+    console.log('useUsers: Mapped user:', user)
 
     // Listen for login/logout events
     useEffect(() => {
