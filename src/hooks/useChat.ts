@@ -280,6 +280,7 @@ export const useChat = (
         message,
         setMessage,
         messages,
+        setMessages,
         sendMessage,
         sendPrivateMessage,
         chatContainerRef,
@@ -287,5 +288,6 @@ export const useChat = (
         scrollToBottom,
         isAtBottom,
         hasNewMessage,
+        conversationId,
     }
 }

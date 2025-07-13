@@ -13,7 +13,7 @@ import {
 import Sidebar from '@/components/chat/sidebar'
 import ChatSection from '@/components/chat/messages'
 import ChatEmptyState from '@/components/chat/ChatEmptyState'
-import ExpiredSessionModal from '@/components/ExpiredSessionModal'
+import LoginModal from '@/components/LoginModal'
 import ConnectionStatusBar from '@/components/chat/ConnectionStatusBar'
 import MobileSidebarOverlay from '@/components/chat/MobileSidebarOverlay'
 
@@ -79,7 +79,7 @@ const Chat = () => {
             {/* Login Modal */}
             <AnimatePresence>
                 {showLoginModal && (
-                    <ExpiredSessionModal
+                    <LoginModal
                         isOpen={showLoginModal}
                         onClose={() => {
                             setShowLoginModal(false)

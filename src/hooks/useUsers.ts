@@ -61,6 +61,37 @@ export const useUsers = (socket: Socket | null) => {
     // Map the user data from SWR response
     const user = userData?.user ? mapToUser(userData.user) : null
 
+    // Listen for login/logout events
+    useEffect(() => {
+        const handleUserLoggedIn = (_event: CustomEvent) => {
+            setIsLoggedIn(true)
+            setIsSessionExpired(false)
+            // Refresh user data
+            refreshUser()
+        }
+
+        const handleUserLoggedOut = () => {
+            setIsLoggedIn(false)
+            setIsSessionExpired(false)
+        }
+
+        if (typeof window !== 'undefined') {
+            window.addEventListener(
+                'userLoggedIn',
+                handleUserLoggedIn as EventListener
+            )
+            window.addEventListener('userLoggedOut', handleUserLoggedOut)
+
+            return () => {
+                window.removeEventListener(
+                    'userLoggedIn',
+                    handleUserLoggedIn as EventListener
+                )
+                window.removeEventListener('userLoggedOut', handleUserLoggedOut)
+            }
+        }
+    }, [refreshUser])
+
     // Socket user list events
     useEffect(() => {
         if (!socket) return

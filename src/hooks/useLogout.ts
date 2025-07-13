@@ -30,6 +30,10 @@ export const useLogout = () => {
             onSuccess: () => {
                 localStorage.removeItem('accessToken')
                 localStorage.removeItem('refreshToken')
+                // Dispatch event để báo hiệu đã logout
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new CustomEvent('userLoggedOut'))
+                }
                 router.push('/login')
             },
             onError: (error) => {

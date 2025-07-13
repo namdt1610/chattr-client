@@ -37,7 +37,7 @@ async function loginFetcher(url: string, { arg }: { arg: LoginCredentials }) {
 
 export function useLogin() {
     const [error, setError] = useState<string>('')
-    const router = useRouter()
+    const _router = useRouter()
 
     const { trigger, isMutating: isLoading } = useSWRMutation<
         LoginResponse,
@@ -45,8 +45,17 @@ export function useLogin() {
         string,
         LoginCredentials
     >(buildApiUrl('/api/auth/login'), loginFetcher, {
-        onSuccess: () => {
-            router.push('/beta')
+        onSuccess: (data) => {
+            // Set global state để báo hiệu đã login thành công
+            if (typeof window !== 'undefined') {
+                // Dispatch custom event để các component khác có thể lắng nghe
+                window.dispatchEvent(
+                    new CustomEvent('userLoggedIn', {
+                        detail: { user: data.user },
+                    })
+                )
+            }
+            // Không redirect nữa, chỉ set global state
         },
         onError: (err: any) => {
             // Xử lý lỗi từ API

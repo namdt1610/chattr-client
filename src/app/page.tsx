@@ -8,7 +8,7 @@ import { useChat } from '@/hooks/useChat'
 import { useUsers } from '@/hooks/useUsers'
 import { useChatStatus } from '@/hooks/useChatStatus'
 import { useRecentChats } from '@/hooks/useGetRecentChats'
-import ExpiredSessionModal from '@/components/ExpiredSessionModal'
+import LoginModal from '@/components/LoginModal'
 import Header from '@/components/chat/Header'
 import Image from 'next/image'
 
@@ -54,7 +54,7 @@ const Chat = () => {
 
     return (
         <div className="overflow-hidden h-screen w-screen bg-zinc-50 text-zinc-800 flex flex-col">
-            <ExpiredSessionModal
+            <LoginModal
                 isOpen={showLoginModal}
                 onClose={() => {
                     setShowLoginModal(false)
