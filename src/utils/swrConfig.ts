@@ -3,11 +3,24 @@ import { buildApiUrl } from './apiConfig'
 
 // Global SWR fetcher that handles token refresh
 export const fetcher = async (url: string) => {
+    // Get token from localStorage
+    const token =
+        typeof window !== 'undefined'
+            ? localStorage.getItem('accessToken')
+            : null
+
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+    }
+
+    // Add Authorization header if token exists
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+    }
+
     const response = await fetch(url, {
         credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
-        },
+        headers,
     })
 
     // If the request is unauthorized, try to refresh the token
@@ -27,9 +40,7 @@ export const fetcher = async (url: string) => {
                 // Retry the original request with new cookies set by the server
                 const retryResponse = await fetch(url, {
                     credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers,
                 })
 
                 if (retryResponse.ok) {

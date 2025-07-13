@@ -45,6 +45,7 @@ export const useUsers = (socket: Socket | null) => {
         {
             onSuccess: (data: UserData) => {
                 console.log('useUsers: User data loaded successfully', data)
+                console.log('useUsers: User object from API:', data?.user)
                 setIsSessionExpired(false)
                 setIsLoggedIn(!!data?.user)
             },
