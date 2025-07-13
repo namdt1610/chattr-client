@@ -28,6 +28,7 @@ interface ChatSectionProps {
     sendMessage: () => void
     sendPrivateMessage: () => void
     isLoggedIn: boolean
+    conversationId?: string | null // Thêm prop này
 }
 
 const ChatSection: React.FC<ChatSectionProps> = ({
@@ -50,11 +51,16 @@ const ChatSection: React.FC<ChatSectionProps> = ({
     sendMessage,
     sendPrivateMessage,
     isLoggedIn,
+    conversationId, // Nhận prop này
 }) => {
     // Only render when we have a selected user
     if (!selectedUser) {
         return null
     }
+
+    // Điều kiện disable gửi tin nhắn
+    const isSendDisabled =
+        !selectedUser?._id || !user?._id || !conversationId || !isLoggedIn
 
     return (
         <main className="flex-1 flex flex-col overflow-hidden h-full">
@@ -89,7 +95,7 @@ const ChatSection: React.FC<ChatSectionProps> = ({
                         sendMessage={
                             selectedUser ? sendPrivateMessage : sendMessage
                         }
-                        isDisabled={!selectedUser && !isLoggedIn}
+                        isDisabled={isSendDisabled}
                     />
                 </div>
             </div>

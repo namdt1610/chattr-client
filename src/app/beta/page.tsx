@@ -160,6 +160,7 @@ const Chat = () => {
                         sendMessage={sendMessage}
                         sendPrivateMessage={sendPrivateMessage}
                         isLoggedIn={isLoggedIn}
+                        conversationId={conversationId}
                     />
 
                     {/* Welcome/Empty State */}
